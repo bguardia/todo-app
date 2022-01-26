@@ -107,3 +107,10 @@ test('hasMany: creates a getter for the owned items', () => {
 	expect(foo.mockConstructorTwos).toHaveLength(1);
 	expect(foo.mockConstructorTwos[0]).toBe(ownee);
 });
+
+test('hasMany: creates a function to generate a new owned item', () => {
+	let foo = myDataset.create({ name: "foo" });
+	let newOwnee = foo.newMockConstructorTwo({ fruit: "plum" });
+	expect(newOwnee).toBeInstanceOf(MockConstructorTwo);
+	expect(newOwnee.mockConstructorId).toBe(foo.id);
+});
