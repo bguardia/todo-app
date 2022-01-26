@@ -87,14 +87,14 @@ var datasetItem = {
 		});
 	},
 
-	toJSON: function(){
+	toJSON: function(){//override toJSON to include non-enumerable dataset-related properties
 		let obj = {};
 		Object.keys(this).concat(Object.keys(this.datasetProperties)).forEach(k => obj[k] = this[k]);
 		return obj;
 	},
 
 	destroy: function(){
-		Datasets[this.dataset].remove(this);
+		Datasets[this.dataset].remove(this.id);
 	},
 };
 
