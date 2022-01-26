@@ -39,12 +39,8 @@ var toDoApp = {
 				let parsedData = JSON.parse(toDoAppData);
 				console.log(parsedData);
 				datasetModule.eachDataset(dataset => {
-					console.log({ datasetName: dataset.name });
-					console.log(parsedData[dataset.name]);
 					if(parsedData[dataset.name]){
-						console.log("made it here");
 						dataset.load(parsedData[dataset.name]);
-						console.log(`Loaded data for ${dataset.name}`);
 					}
 				});
 			}
@@ -70,63 +66,16 @@ var toDoApp = {
 };
 
 
-/*
-var applicationLoader = (function(){
-	let applicationPrefix = "toDoApp";
-	let projectsKey = applicationPrefix + "_projects";
-	let loadProjects = function(){
-		if(storageAvailable('localStorage')){
-				console.log("localStorage is available.")
-			if(!localStorage.getItem(projectsKey)){
-				console.log("Application data not found");
-				return [];
-			}else{
-				console.log("Application data found");
-				return JSON.parse(localStorage.getItem(projectsKey)); //array of objects (without methods)
-			}
-		}
-		console.log("localStorage is unavailable");
-		return [];
-	};
-
-	return { loadProjects: loadProjects };
-})();
-
-var dataSerializer = (function(){
-	let applicationPrefix = "toDoApp";
-	let projectsKey = applicationPrefix + "_projects";
-	let saveProjects = function(){
-		if(storageAvailable('localStorage')){
-			console.log("localStorage is available");
-			let serializedData = JSON.stringify(Projects.all);
-			localStorage.setItem(projectsKey, serializedData);
-		}else{
-			throw "localStorage not available";
-		}
-	}
-
-	return { saveProjects: saveProjects };
-})();
-*/
-
+//Project, Projects
 var Project = function(args = {}) {
 	this.title = args.title || "new project";
 	this.description = args.description || "";
-	/*
-        this.addItem = function(newItem) {
-		this.items.push(newItem);
-	};
-
-	this.removeItem = function(item){
-		let id = this.items.findIndex(_item => _item === item);
-		return this.items.splice(id, 1);	
-	};*/
 };
-
 Project.prototype = Object.create( datasetModule.datasetItem );
 
 var Projects = new datasetModule.Dataset("Projects", Project);
 
+//Item, Items
 var Item = function(args = {}) {
 	this.title = args.title || "new item";
 	this.description = args.description || "";
@@ -142,7 +91,6 @@ var Item = function(args = {}) {
 	this.recurs = ""; //daily, weekly, monthly, annually
 	*/
 };
-
 Item.prototype = Object.create( datasetModule.datasetItem );
 
 var Items = new datasetModule.Dataset("Items", Item);
@@ -303,6 +251,7 @@ var projectsController = {
 	},
 };
 
+//UI components
 var components = {
 
 	form: function(obj, onSubmit){
@@ -570,21 +519,5 @@ var testCommonOperations = function(){
 	destroyItem(itemToDestroy);
 	dispProject(myProject);
 }
-
-//Test code
-/*
-var myJSON = JSON.stringify(myProject);
-
-console.log(myJSON);
-
-var myProjects = applicationLoader.loadProjects();
-
-console.log("myProjects is " + myProjects);
-
-if(myProjects.length == 0){
-	let projectsJSON = JSON.stringify([myProject]);
-	localStorage.setItem("toDoApp_projects", projectsJSON);
-}
-*/
 
 window.addEventListener("load", testMain);
