@@ -1,3 +1,5 @@
+const datasetModule = require('./dataset.js');
+
 //Check for localStorage
 //code from: https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API/Using_the_Web_Storage_API
 function storageAvailable(type) {
@@ -64,65 +66,6 @@ var dataSerializer = (function(){
 	return { saveProjects: saveProjects };
 })();
 
-//Dataset acts like a simple database
-//It stores data for a specific model
-var Dataset = function(name, modelConstructor){
-	this.name = name
-	this.set = [];
-	this.count = 0;
-	this.modelConstructor = modelConstructor;
-};
-
-Dataset.prototype.all = function(){
-	return this.set.slice(); //return copy of set
-};
-
-Dataset.prototype.create = function(item){
-	if(!this.find(x => x === item)){
-		this.set.push(item);
-		item.id = this.count.toString();
-		this.count++;
-	} else {
-		throw `item already exists in ${dataset.name}`;
-	}
-};
-
-Dataset.prototype.find = function(fn){
-	return this.set.find(fn);
-};
-
-Dataset.prototype.filter = function(fn){
-	return this.set.filter(fn);
-};
-
-Dataset.prototype.remove = function(id){
-	let index = this.set.findIndex(item => item.id === id);
-	console.log(`Index of ${id} in ${this.name}.set is: ${index}`);
-	if(~index){
-		return this.set.splice(index, 1);
-	} else {
-		throw `item doesn't exist in ${this.name}`;
-	}
-};
-
-Dataset.prototype.loadSet = function(objArray){
-	objArray.forEach(data => {
-		let item = this.modelConstructor(data);
-		this.set.push(item);
-	});
-};
-
-//End Dataset
-
-var setDataset = function(obj, dataset){
-	obj.create = function(){
-		dataset.create(this);
-	};
-	
-	obj.destroy = function(){
-		dataset.remove(this);
-	};
-};
 
 var Project = function(args = {}) {
 	this.title = args.title || "new project";
@@ -136,18 +79,11 @@ var Project = function(args = {}) {
 		let id = this.items.findIndex(_item => _item === item);
 		return this.items.splice(id, 1);	
 	};*/
-
-	setDataset(this, Projects);
-	this.create();
 };
 
-Project.prototype.items = function(){
-   	let items = Items.filter((i) => { 
-		return i.projectId === this.id });
-	return items;
-}
+Project.prototype = Object.create( datasetModule.datasetItem );
 
-var Projects = new Dataset("Projects", Project);
+var Projects = new datasetModule.Dataset("Projects", Project);
 
 var Item = function(args = {}) {
 	this.title = args.title || "new item";
@@ -159,56 +95,32 @@ var Item = function(args = {}) {
 	this.endTime = this.isAllDay ? "23:59" : args.endTime;
 	*/
 	this.isComplete = args.isComplete || false;
-	this.projectId = args.projectId || null;
 	/* recurring
 	this.isRecurring = args.isRecurring || false;
 	this.recurs = ""; //daily, weekly, monthly, annually
 	*/
-
-	setDataset(this, Items);
-	this.create();
 };
 
-var Items = new Dataset("Items", Item);
+Item.prototype = Object.create( datasetModule.datasetItem );
 
-Object.defineProperty(Item.prototype, 'project', {
-	get() { 
-		if(this.projectId){
-			return Projects.find(p => p.id === this.projectId);
-		} else {
-			return null;
-		}
-	},
+var Items = new datasetModule.Dataset("Items", Item);
 
-	set(project) {
-		if(project.id && Projects.find(p => p.id === project.id)){
-			this.projectId = project.id;
-		} else {
-			throw "Does not exist in Projects set";
-		};
-	}, 
-});
-/*
-Item.prototype.project = function(){
-	if(this.projectId){
-		Projects.find(this.projectId);
-	}else{
-		throw 'No associated project';
-	}
-}
-*/
+//Create associations
+datasetModule.setAssociation(Project, { hasMany: Item });
+datasetModule.setAssociation(Item, { belongsTo: Project });
 
 //Seed code
-var myProject = new Project({ title: "Project 1",
+var myProject = Projects.create({ title: "Project 1",
 			      description: "this is my first project", });
 
-var mySecondProject = new Project({ title: "Project 2", 
+var mySecondProject = Projects.create({ title: "Project 2", 
 				    description: "this is my second project", });
 var itemData = [{title: "wash the dishes", description: "wash by hand", projectId: myProject.id },
 	        {title: "go to susan's b-day party", description: "at Susan's house", data: new Date('February 13, 2022 18:00:00'), projectId: myProject.id},
 	        {title: "eat a sandwich", description: "Preferrably a blt", projectId: myProject.id }]
 
-itemData.forEach(d => new Item(d));
+itemData.forEach(d => Items.create(d));
+
 //simple event handler
 var EventHandler = (function(){
 	var events = {}; 
@@ -236,8 +148,12 @@ var EventHandler = (function(){
 
 //Sample user interactions
 var createProject = function(projectArgs){
-	let newProject = new Project(projectArgs);
+	return Projects.create(projectArgs);
 };
+
+var createItem = function(itemArgs){
+	return Items.create(itemArgs);
+}
 
 var addItemToProject = function(item, project){
 	project.addItem(item);
@@ -255,20 +171,216 @@ var destroyItem = function(item){ //should only need item
 	Items.remove(item.id);
 };
 
+var itemsController = {
+	_new: function(){
+		let item = Items.create();
+	},
+
+	create: function(args){
+		let item = Items.create(args);
+		return item;
+	},
+
+	update: function(args){
+		let item = Items.find(i => i.id === args.itemId);
+		if(item){
+			item.update(args);
+		} else {
+		  throw 'no item found';	
+		}
+	},
+
+	destroy: function(args){
+		let item = Items.find(i => i.id === args.itemId);
+		if(item){
+			item.destroy();
+		}
+	},
+};
+
+var projectsController = {
+	_new: function(){
+		let toDoContainer = document.getElementById("toDoContainer");
+		toDoContainer.replaceChildren();
+		toDoContainer.appendChild(components.projectForm());
+	},
+
+	index: function(){
+		let projects = Projects.all();
+		let toDoContainer = document.getElementById("toDoContainer");
+		toDoContainer.replaceChildren();
+		projects.forEach(p => {
+			let pComponent = components.project(p);
+			toDoContainer.appendChild(pComponent)});
+	},
+
+	create: function(args) {
+		console.log("Called projectsController.create");
+		let toDoContainer = document.getElementById("toDoContainer");
+		let project = Projects.create(args);
+		console.log("project is:");
+		console.log(project);
+		console.log("Project's enumerable properties are:");
+		Object.keys(project).forEach(k => console.log({ k }));
+		toDoContainer.replaceChildren();
+		toDoContainer.appendChild(components.project(project));
+	},
+
+	update: function(args) {
+		let project = Projects.find(i => i.id === args.projectId);
+		if(project){
+			project.update(args);
+		} else {
+		  throw 'no project found';	
+		}
+
+	},
+
+	destroy: function(args) {
+		let project = Projects.find(p => p.id === args.projectId);
+		if(project){
+			project.destroy();
+		}
+	},
+};
+
+var components = {
+	createInput: function(args){
+		let input = document.createElement("input");
+		input.type = "text";
+		input.name = args.name;
+		input.id = args.name;
+		input.setAttribute("placeholder", args.placeholder);
+		let label = document.createElement("label");
+		label.setAttribute("for", args.name);
+		label.innerHTML = args.label;
+		
+		let fieldContainer = document.createElement("div");
+		fieldContainer.appendChild(label);
+		fieldContainer.appendChild(input);
+
+		return fieldContainer; 
+	},
+
+	project: function(pObj) {
+		let listEl = document.createElement("ul");
+		let listTitle = document.createElement("li");
+		listTitle.innerHTML = pObj.title;
+		listEl.appendChild(listTitle);
+
+		let itemsListItem = document.createElement("li");
+		let itemsList = document.createElement("ul")
+		itemsListItem.appendChild(itemsList);
+		pObj.items.forEach(item => {
+			let listItem = document.createElement("li");
+			listItem.innerHTML = item.title;
+			itemsList.appendChild(listItem);
+		});
+
+		let newItemField = this.itemForm(pObj.id, itemsList);
+		itemsList.appendChild(newItemField);
+		listEl.appendChild(itemsList);
+		return listEl;
+	},
+
+	projectForm: function(){
+		let form = document.createElement("form");
+
+		let titleField = this.createInput({ name: "projectTitle", label: "Project Name", });
+		let descField = this.createInput({ name: "projectDesc", label: "Details", });
+		let submitBtn = document.createElement("button");
+		submitBtn.innerHTML = "Create";
+		submitBtn.addEventListener("click", function(){
+			let title = document.getElementById("projectTitle").value;
+			let description = document.getElementById("projectDesc").value;
+			projectsController.create({ title: title, description: description });
+		});
+
+		form.appendChild(titleField);
+		form.appendChild(descField);
+		form.appendChild(submitBtn);
+
+		return form;
+	},
+
+	itemForm: function(projectId, parentEl){
+		let container = document.createElement("li");
+		let projectPrefix = `project_${projectId}_`;
+		let itemField = this.createInput({ name: `${projectPrefix}itemTitle`, label: "Task", });
+		let descField = this.createInput({ name: `${projectPrefix}itemDesc`, label: "Details", });
+		let addItem = document.createElement("button");
+		addItem.innerHTML = "Add item";
+
+		let createItem = this.item.bind(this);
+		let createItemForm = this.itemForm.bind(this);
+		addItem.addEventListener("click", function(){
+			addItem.setAttribute("disabled", true);
+			let title = document.getElementById(`${projectPrefix}itemTitle`).value;
+			let description = document.getElementById(`${projectPrefix}itemDesc`).value;
+			let item = itemsController.create({ title: title, 
+						 	    description: description,
+						 	    projectId: projectId,
+						 	  });
+		        container.remove();	
+			parentEl.appendChild(createItem(item));
+			parentEl.appendChild(createItemForm(projectId, parentEl));
+		});
+
+		container.appendChild(itemField);
+		container.appendChild(descField);
+		container.appendChild(addItem);
+
+		return container;
+	},
+
+	item: function(iObj) {
+		let container = document.createElement("li");
+		let itemTitleSpan = document.createElement("span");
+		itemTitleSpan.innerHTML = iObj.title;
+		let itemDescSpan = document.createElement("span");
+		let breakEl = document.createElement("br");
+		itemDescSpan.innerHTML = iObj.description;
+		container.appendChild(itemTitleSpan);
+		container.appendChild(breakEl);
+		container.appendChild(itemDescSpan);
+		return container;
+	},
+
+	button: function(str) {
+		let btn = document.createElement("button");
+		btn.innerHTML = str;
+		return btn;
+	},
+}
+
+var projectView = {
+	
+};
+
+
+var testMain = function() {
+	let projectIndexBtn = components.button("See all projects");
+	projectIndexBtn.addEventListener("click", () => { projectsController.index(); });
+	let projectNewBtn = components.button("New Project");
+	projectNewBtn.addEventListener("click", () => { projectsController._new(); });
+	document.body.appendChild(projectIndexBtn);
+	document.body.appendChild(projectNewBtn);
+}
+
 var testCommonOperations = function(){
-	var dispItem = function(item){
-		console.log(`Item "${item.title}"\nid: ${item.id}`);
+	var dispItem = function(item, prefix = ""){
+		console.log(`${prefix}Item "${item.title}"\n${prefix}id: ${item.id}`);
 	};
 	var dispProject = function(project){
 		console.log(`Project "${project.title}"\nid: ${project.id}`);
-		project.items().forEach(i => dispItem(i));
+		project.items().forEach(i => dispItem(i, "-->"));
 	};
 
 	dispProject(myProject);
 	dispProject(mySecondProject);
 
 	console.log("add new item to myProject...");
-	let newItem = new Item({title: "a new item", description: "new!", projectId: myProject.id});
+	let newItem = createItem({title: "a new item", description: "new!", projectId: myProject.id});
 	dispProject(myProject);
 
 	console.log("Move item to second Project...");
@@ -298,4 +410,4 @@ if(myProjects.length == 0){
 }
 */
 
-testCommonOperations();
+window.addEventListener("load", testMain);
