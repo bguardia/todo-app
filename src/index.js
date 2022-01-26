@@ -28,7 +28,49 @@ function storageAvailable(type) {
 }
 
 //applicationLoader
+var toDoApp = {
+	config: { storageLoc: "toDoApp", },
 
+	load: function(){
+		if(storageAvailable('localStorage')){
+			let toDoAppData = localStorage.getItem(this.config.storageLoc);
+			console.log({ toDoAppData });
+			if(toDoAppData){
+				let parsedData = JSON.parse(toDoAppData);
+				console.log(parsedData);
+				datasetModule.eachDataset(dataset => {
+					console.log({ datasetName: dataset.name });
+					console.log(parsedData[dataset.name]);
+					if(parsedData[dataset.name]){
+						console.log("made it here");
+						dataset.load(parsedData[dataset.name]);
+						console.log(`Loaded data for ${dataset.name}`);
+					}
+				});
+			}
+		}
+	},
+
+	save: function(){
+		if(storageAvailable('localStorage')){
+			let toDoAppData = {};
+			datasetModule.eachDataset(dataset => {
+				toDoAppData[dataset.name] = dataset.dump();
+			});
+
+			localStorage.setItem(this.config.storageLoc, JSON.stringify(toDoAppData));
+		}
+	},
+
+	clearData: function(){
+		if(storageAvailable('localStorage')){
+			localStorage.removeItem(this.config.storageLoc);
+		}
+	},
+};
+
+
+/*
 var applicationLoader = (function(){
 	let applicationPrefix = "toDoApp";
 	let projectsKey = applicationPrefix + "_projects";
@@ -65,7 +107,7 @@ var dataSerializer = (function(){
 
 	return { saveProjects: saveProjects };
 })();
-
+*/
 
 var Project = function(args = {}) {
 	this.title = args.title || "new project";
@@ -88,8 +130,8 @@ var Projects = new datasetModule.Dataset("Projects", Project);
 var Item = function(args = {}) {
 	this.title = args.title || "new item";
 	this.description = args.description || "";
-	/*
 	this.date = args.date || Date.now();
+	/*
 	this.isAllDay = false;
 	this.startTime = this.isAllDay ? "00:00" : args.startTime; //if no time is given, treat as all-day
 	this.endTime = this.isAllDay ? "23:59" : args.endTime;
@@ -110,16 +152,19 @@ datasetModule.setAssociation(Project, { hasMany: Item });
 datasetModule.setAssociation(Item, { belongsTo: Project });
 
 //Seed code
-var myProject = Projects.create({ title: "Project 1",
-			      description: "this is my first project", });
 
-var mySecondProject = Projects.create({ title: "Project 2", 
-				    description: "this is my second project", });
-var itemData = [{title: "wash the dishes", description: "wash by hand", projectId: myProject.id },
-	        {title: "go to susan's b-day party", description: "at Susan's house", data: new Date('February 13, 2022 18:00:00'), projectId: myProject.id},
-	        {title: "eat a sandwich", description: "Preferrably a blt", projectId: myProject.id }]
+var seedData = function() {
+	var myProject = Projects.create({ title: "Project 1",
+				      description: "this is my first project", });
 
-itemData.forEach(d => Items.create(d));
+	var mySecondProject = Projects.create({ title: "Project 2", 
+					    description: "this is my second project", });
+	var itemData = [{title: "wash the dishes", description: "wash by hand", projectId: myProject.id },
+			{title: "go to susan's b-day party", description: "at Susan's house", data: new Date('February 13, 2022 18:00:00'), projectId: myProject.id},
+			{title: "eat a sandwich", description: "Preferrably a blt", projectId: myProject.id }]
+
+	itemData.forEach(d => Items.create(d));
+};
 
 //simple event handler
 var EventHandler = (function(){
@@ -176,6 +221,13 @@ var itemsController = {
 		let item = Items.create();
 	},
 
+	index: function(){
+		let toDoContainer = document.getElementById("toDoContainer");
+		let items = Items.all();
+		toDoContainer.replaceChildren();
+		toDoContainer.appendChild(components.itemsTable(items));
+	},
+
 	create: function(args){
 		let item = Items.create(args);
 		return item;
@@ -209,9 +261,16 @@ var projectsController = {
 		let projects = Projects.all();
 		let toDoContainer = document.getElementById("toDoContainer");
 		toDoContainer.replaceChildren();
+		/*
 		projects.forEach(p => {
 			let pComponent = components.project(p);
 			toDoContainer.appendChild(pComponent)});
+			*/
+		toDoContainer.appendChild(components.projectsTable(projects));
+	},
+
+	edit: function(args) {
+
 	},
 
 	create: function(args) {
@@ -245,6 +304,101 @@ var projectsController = {
 };
 
 var components = {
+
+	form: function(obj, onSubmit){
+		let container = document.createElement("div");
+		Object.keys(obj).forEach(()=>{
+			let input = this.createInput({ name: k, placeholder: obj[k] });
+			container.appendChild(input);
+		});
+
+		let btn = document.createElement("button");
+		btn.addEventListener("click", onSubmit);
+
+		return container;
+	},
+
+	table: function(objs, headers, opts = {}){
+		let table = document.createElement("table");
+		table.className = "table";
+		let tHead = document.createElement("thead");
+		let headerRow = document.createElement("tr");
+		headers.forEach(h => {
+			let header = document.createElement("th");
+			header.innerHTML = h;
+			headerRow.appendChild(header);
+		});
+		tHead.appendChild(headerRow);
+
+		let tBody = document.createElement("tbody");
+		objs.forEach(o => {
+			let row = document.createElement("tr");
+			headers.forEach(h => {
+				let cell = document.createElement("td");
+				if(opts[h]){
+					opts[h](o, cell);
+				} else {
+					cell.innerHTML = o[h];
+				}
+				row.appendChild(cell);
+			});
+			tBody.appendChild(row);
+		});
+
+		table.appendChild(tHead);
+		table.appendChild(tBody);
+		
+		return table;
+	},
+
+	projectsTable: function(projects){
+		let itemCount = function(obj, cell){
+			cell.innerHTML = obj.items.length;
+		};
+
+		let editBtn = function(obj, cell){
+			let btn = this.button("Edit");
+			btn.addEventListener("click", () => { projectsController.edit({ projectId: obj.id }); });
+			cell.appendChild(btn);
+		}.bind(this);
+
+		let delBtn = function(obj, cell){
+			let btn = this.button("Delete");
+			btn.addEventListener("click", () => { projectsController.destroy({ projectId: obj.id }); });
+			cell.appendChild(btn);
+		}.bind(this);
+
+		let table = this.table(projects, 
+				       ["id", "title", "description", "items", "edit", "destroy"],
+				       { items: itemCount, edit: editBtn, destroy: delBtn });
+
+		return table;
+	},
+
+	itemsTable: function(items){
+		let getProject = function(obj, cell){
+			cell.innerHTML = obj.project.title;
+		};
+
+		let editBtn = function(obj, cell){
+			let btn = this.button("Edit");
+			btn.addEventListener("click", () => { itemsController.edit({ itemId: obj.id }); });
+			cell.appendChild(btn);
+		}.bind(this);
+
+		let delBtn = function(obj, cell){
+			let btn = this.button("Delete");
+			btn.addEventListener("click", () => { itemsController.destroy({ itemId: obj.id }); });
+			cell.appendChild(btn);
+		}.bind(this);
+
+		let table = this.table(items,
+				       ["id", "title", "description", "project", "edit", "destroy"],
+				       { project: getProject, edit: editBtn, destroy: delBtn });
+
+		return table;
+	},
+
 	createInput: function(args){
 		let input = document.createElement("input");
 		input.type = "text";
@@ -333,6 +487,7 @@ var components = {
 		return container;
 	},
 
+
 	item: function(iObj) {
 		let container = document.createElement("li");
 		let itemTitleSpan = document.createElement("span");
@@ -344,6 +499,17 @@ var components = {
 		container.appendChild(breakEl);
 		container.appendChild(itemDescSpan);
 		return container;
+	},
+
+	itemDetailed: function(iObj) {
+		let container = document.createElement("div");
+		let itemTitle = document.createElement("p");
+		itemTitle.innerHTML = iObj.title;
+		let itemDescription = document.createElement("p");
+		itemDescription.innerHTML = iObj.description;
+		let itemDate = document.createElement("p");
+		itemDate.innerHTML = iObj.date;
+		
 	},
 
 	button: function(str) {
@@ -359,12 +525,23 @@ var projectView = {
 
 
 var testMain = function() {
+	toDoApp.load();
 	let projectIndexBtn = components.button("See all projects");
 	projectIndexBtn.addEventListener("click", () => { projectsController.index(); });
 	let projectNewBtn = components.button("New Project");
 	projectNewBtn.addEventListener("click", () => { projectsController._new(); });
+	let itemIndexBtn = components.button("See all items");
+	itemIndexBtn.addEventListener("click", () => { itemsController.index(); });
+	let saveBtn = components.button("Save data");
+	saveBtn.addEventListener("click", () => { toDoApp.save(); });
+	let clearBtn = components.button("Clear local storage");
+	clearBtn.addEventListener("click", () => { toDoApp.clearData(); });
+
 	document.body.appendChild(projectIndexBtn);
 	document.body.appendChild(projectNewBtn);
+	document.body.appendChild(itemIndexBtn);
+	document.body.appendChild(saveBtn);
+	document.body.appendChild(clearBtn);
 }
 
 var testCommonOperations = function(){
