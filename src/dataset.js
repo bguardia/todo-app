@@ -1,5 +1,10 @@
 var Datasets = Object.create(null);
 
+var eachDataset = function(fn){
+	let datasetArray = Object.keys(Datasets).map(k => Datasets[k]);
+	datasetArray.forEach(fn);
+};
+
 //begin Dataset (in MVC, similar to Model class)
 //Dataset keeps track of instances of its 'type'
 //and contains methods for search, retrieval, creation and removal
@@ -81,6 +86,13 @@ var datasetItem = {
 			}
 		});
 	},
+
+	toJSON: function(){
+		let obj = {};
+		Object.keys(this).concat(Object.keys(this.datasetProperties)).forEach(k => obj[k] = this[k]);
+		return obj;
+	},
+
 	destroy: function(){
 		Datasets[this.dataset].remove(this);
 	},
@@ -92,9 +104,11 @@ var datasetItem = {
 //the Key is ownerConstructor.name with first letter lowercased
 //ex) object belonging to MyItem has the 'myItem' key
 //
-//hasMany association creates a getter for the ownees
+//hasMany association creates a getter for the ownees, and generator for new ownees
 //the Key is owneeConstructer.name with first letter lowercased, plus 's'
 //ex) object having many MyItem has the 'myItems' key
+//the Generator method is "new" + owneeConstructor.name
+//ex) the generator for MyItem is 'newMyItem'
 var setAssociation = function(objConstructor, args){
 	let obj = objConstructor.prototype;
 	if(args.belongsTo){
@@ -117,20 +131,26 @@ var setAssociation = function(objConstructor, args){
 		});
 	} else if(args.hasMany){
 		let thisName = firstLetterToLowercase(objConstructor.name);
-		let owneeName = firstLetterToLowercase(args.hasMany.name) + "s";
+		let owneeName = firstLetterToLowercase(args.hasMany.name);
 		let owneeTable = Datasets[args.hasMany.prototype.dataset]
 		let thisIdKey = thisName + "Id";
 
 		console.log({ owneeName, owneeTable });
-		Object.defineProperty(obj, owneeName, {
+		Object.defineProperty(obj, `${owneeName}s`, {
 			get(){	return owneeTable.filter(o => o[thisIdKey] === this.id)},
 		});
+		
+		obj[`new${args.hasMany.name}`] = function(args){ 
+			args[thisIdKey] = this.id;
+			return owneeTable.create(args); 
+		};
 	}
 };
 //utility for setAssociation
 var firstLetterToLowercase = function(str) { return str.charAt(0).toLowerCase() + str.substring(1); };
 
 module.exports = { Dataset, 
+		   eachDataset,
 		   datasetItem,
 		   setAssociation };
 /*
