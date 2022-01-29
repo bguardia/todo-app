@@ -93,6 +93,15 @@ var datasetItem = {
 		return obj;
 	},
 
+	update: function(args){
+		Object.keys(args).forEach((k) => {
+			if(this.hasOwnProperty(k) && 
+			   !["dataset", "id"].includes(k)){
+				this[k] = args[k];
+			}
+		});
+	},
+
 	destroy: function(){
 		Datasets[this.dataset].remove(this.id);
 	},
