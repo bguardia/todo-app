@@ -123,13 +123,17 @@ var seedData = function() {
 var EventHandler = (function(){
 	var events = {}; 
 	var createEvent = function(eventName){
-		events[eventName] = []; //empty Array to be filled be subscribers
+		if(!events[eventName]){
+			events[eventName] = []; //empty Array to be filled be subscribers
+		}
 		return eventName;
 	};
 
 	var unsubscribe = function(eventName, callbackFn){
 		let index = events[eventName].findIndex(fn => fn === callbackFn);
-		events[eventName].splice(index, 1);
+		if(~index){
+		  events[eventName].splice(index, 1);
+		}
 	};
 
 	var subscribe = function(eventName, callbackFn){
