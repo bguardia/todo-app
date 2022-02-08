@@ -503,6 +503,7 @@ var SynchronizingPresenter = {
 	changeEvent: EventHandler.createEvent("changed"), //return event name
 	boundCallback: null, 
 	view: null,
+	viewProps: null, //Object containting properties to pass to view
 	emitChanged: function(){
 		EventHandler.publish(this.changeEvent, this);
 	},
@@ -524,10 +525,12 @@ var SynchronizingPresenter = {
 	},
 
 	load: function(){
-		//individual load logic here
+		this.beforeLoad();
+		this.loadView();
 	},
 
 	unload: function(){
+		this.beforeUnload();
 		this.unsubscribeToChanged();
 		this.view.remove();
 	},
@@ -538,28 +541,56 @@ var SynchronizingPresenter = {
 			this.emitChanged();
 		}
 	},
+
+	loadView: function(){
+		if(!this.view.isInitialized()){
+			this.beforeInitialize();
+			this.view.initialize();
+			this.afterInitialize();
+		}
+		this.beforeViewLoad();
+		this.view.load(this.viewProps);
+	},
+
+	setView: function(view){
+		this.view = view;
+	},
+
+	getView: function(){
+		return this.view;
+	},
+
+	//Hooks
+	beforeLoad: function(){
+		//Before calling loadView
+	},
+
+	beforeInitialize: function(){
+		//Inside loadView, called only before initializing an uninitialized view
+	},
+
+	afterInitialize: function(){
+		//Inside loadView, called after initializing an uninitialized view
+	},
+
+	beforeViewLoad: function(){
+		//Inside loadView, called every time before loading view
+	},
+
+	beforeUnload: function(){
+		//Called before unloading presenter
+	},
 };
 
 var ApplicationPresenter = (function (){
-	let projects = [];
-	let view = null;
 	let subpresenter = null;
 
 	let appPresenter = Object.create(SynchronizingPresenter);
 	appPresenter.subscribeToChanged();
+	appPresenter.viewProps = {};
 
-	appPresenter.load = function(){
-		projects = Projects.all();	
-		loadView();
-	};
-
-	let loadView = function(){
-		//refresh view
-		view.load(projects);
-	};
-
-	appPresenter.setView = function(newView){
-		view = newView;	
+	appPresenter.beforeLoad = function(){
+		appPresenter.viewProps.projects = Projects.all();	
 	};
 
 	//Subviews
@@ -569,29 +600,26 @@ var ApplicationPresenter = (function (){
 		}
 		subpresenter = presenter;
 		subpresenter.load();
-		view.loadSubview(subpresenter.getView());
+		this.view.loadSubview(subpresenter.getView());
 	};
 
 	appPresenter.todayView = function(){
 		appPresenter.setSubview(new DayPresenter(new Date()));
-		console.log("todayView");
 	};
 
 	appPresenter.tomorrowView = function(){
 		let tomorrowPresenter = new DayPresenter(new Date(Date.now() + (24*60*60*1000)));
 		appPresenter.setSubview(tomorrowPresenter);
-		console.log("tomorrowView");
 	};
 
 	appPresenter.weekView = function(){
-		console.log("weekView");
 		let today = new Date();
 		let oneWeekLater = new Date(Date.now() + (24*60*60*1000)*7);
 		appPresenter.setSubview(new PeriodPresenter(today, oneWeekLater));
 	};
 
 	appPresenter.projectView = function(pId){
-		let project = projects.find(p => p.id === pId);
+		let project = Projects.find(p => p.id === pId);
 		appPresenter.setSubview(new ProjectPresenter(project));
 	};
 
@@ -605,17 +633,15 @@ var ApplicationPresenter = (function (){
 		let pFormPresenter = new ProjectFormPresenter();
 		pFormPresenter.load();
 		let onSave = pFormPresenter.createProject.bind(pFormPresenter);
-		view.loadModal(pFormPresenter.getView(), onSave);
+		this.view.loadModal(pFormPresenter.getView(), onSave);
 	};
 
 	appPresenter.newItem = function(){
 		let iFormPresenter = new ItemFormPresenter();
 		iFormPresenter.load();
 		let onSave = iFormPresenter.createItem.bind(iFormPresenter);
-		view.loadModal(iFormPresenter.getView(), onSave);
+		this.view.loadModal(iFormPresenter.getView(), onSave);
 	};
-
-	//appPresenter.setView(ApplicationView);
 
 	return appPresenter;
 })();
@@ -666,34 +692,11 @@ var View = {
 };
 
 var ApplicationView = (function(){
-	/*
-	let header = document.createElement("header");
-	let title = document.createElement("h1");
-	title.innerHTML = "ToDo App";
-	header.appendChild(title);
+	let view = Object.create(View);
 
-	let verticalNav = document.createElement("div");
-	verticalNav.className = "d-flex";
-	let verticalNavTop = document.createElement("div");
-
-	let todayBtn = document.createElement("button");
-	todayBtn.innerHTML = "Today";
-	todayBtn.addEventListener("click", ()=>{ });
-	verticalNavTop.appendChild(todayBtn);
-
-	let tomorrowBtn = document.createElement("button");
-	tomorrowBtn.innerHTML = "Tomorrow";
-	tomorrowBtn.addEventListener("click", ()=>{ });
-	verticalNavTop.appendChild(tomorrowBtn);
-
-	let thisWeekBtn = document.createElement("button");
-	thisWeekBtn.innerHTML = "This Week";
-	thisWeekBtn.addEventListener("click", ()=>{ });
-	verticalNavTop.appendChild(thisWeekBtn);
-	*/
-	let viewContainer = document.createElement("div");
+	view.container = document.createElement("div");
 	let navContainer = document.createElement("div");
-	viewContainer.appendChild(navContainer);
+	view.container.appendChild(navContainer);
 
 	//Controls
 	let todayButton = document.createElement("button");
@@ -712,12 +715,12 @@ var ApplicationView = (function(){
 	navContainer.appendChild(weekButton);
 
 	let newProjectButton = document.createElement("button");
-	newProjectButton.addEventListener("click", ApplicationPresenter.newProject);
+	newProjectButton.addEventListener("click", ApplicationPresenter.newProject.bind(ApplicationPresenter));
 	newProjectButton.innerHTML = "New Project";
 	navContainer.appendChild(newProjectButton);
 
 	let newItemButton = document.createElement("button");
-	newItemButton.addEventListener("click", ApplicationPresenter.newItem);
+	newItemButton.addEventListener("click", ApplicationPresenter.newItem.bind(ApplicationPresenter));
 	newItemButton.innerHTML = "New Item";
 	navContainer.appendChild(newItemButton);
 
@@ -726,7 +729,7 @@ var ApplicationView = (function(){
 	let projectListItems = [];
 
 	let subviewContainer = document.createElement("div");
-	viewContainer.appendChild(subviewContainer);
+	view.container.appendChild(subviewContainer);
 
 	let loadListItem = function(item, elId = item.id){
 		let listItem = document.createElement("li");
@@ -739,11 +742,11 @@ var ApplicationView = (function(){
 		return listItem;
 	};
 
-	let render = function(){
-		document.body.appendChild(viewContainer);
+	view.render = function(){
+		document.body.appendChild(view.container);
 	};
 
-	let load = function(projects){
+	view.load = function({ projects }){
 		projectList.replaceChildren();
 		projects.forEach(project => {
 			projectList.appendChild(loadListItem(project, `project${project.id}`));
@@ -751,11 +754,11 @@ var ApplicationView = (function(){
 
 	};
 
-	let loadSubview = function(subview){
+	view.loadSubview = function(subview){
 		subview.renderIn(subviewContainer);
 	};
 
-	let loadModal = function(view, onSave){
+	view.loadModal = function(view, onSave){
 		let modalEl = components.modal("Modal", view.container);
 		let saveBtn = modalEl.querySelector("#modal-save-btn");
 		this.modal = new Modal(modalEl);
@@ -767,35 +770,69 @@ var ApplicationView = (function(){
 		this.modal.show();
 	}
 
-	return { render: render, 
-		 load: load, 
-		 loadSubview: loadSubview,
-		 loadModal: loadModal };
+	return view;
 })();
+
+var ItemsPresenter = function(items){
+	Object.setPrototypeOf(this, Object.create(SynchronizingPresenter));
+	//this.subscribeToChanged();
+
+	this.items = items;
+	this.viewProps = {};
+
+	this.beforeViewLoad = function(){
+		let itemComponents = this.items.map(i => { 
+			let iPresenter = new ItemPresenter(i);
+			iPresenter.load();
+			return iPresenter.getView(); });
+		this.viewProps.itemComponents = itemComponents;
+	};
+
+	this.setView(new ItemsView());
+};
+
+var ItemsView = function(){
+
+	this._initialize = function(title){
+		this.container = document.createElement("div");
+		this.itemsContainer = document.createElement("ul");
+
+		this.container.appendChild(this.itemsContainer);
+	};
+
+	this.load = function({ itemComponents }){
+		this.itemsContainer.replaceChildren();
+		if(!!itemComponents.length){
+			itemComponents.forEach(i => {
+				this.itemsContainer.appendChild(i.container);
+			});
+		}
+	};
+
+	this.renderIn = function(parentEl){
+		parentEl.appendChild(this.container);
+	};
+
+};
+ItemsView.prototype = Object.create(View);
+
 
 var ProjectPresenter = function(pObj){
 	Object.setPrototypeOf(this, Object.create(SynchronizingPresenter));
 	this.subscribeToChanged();
 
 	this.projectModel = pObj;
-	this.projectItems = [];
+	this.viewProps = { project: pObj };
 	this.allowShowCompleted = false;
-	this.projectId = pObj.id;
-	this.projectTitle = pObj.title;
-	this.projectDesc = pObj.description;
 
-	this.view = null;
-
-	this.load = function(){
-		this.projectItems = [];
-		console.log(`Called ProjectPresenter.load (${this.projectModel.title})`);
+	this.beforeLoad = function(){
+		this.viewProps.items = [];
 		this.projectModel.items.forEach(i => {
 			if(this.allowShowCompleted || !i.isComplete){
-				this.projectItems.push(i);
+				this.viewProps.items.push(i);
 			}
 		});
-		this.loadView();
-	};
+	}
 
 	this.updateProject = function(args){
 		this.projectModel.update(args);
@@ -808,94 +845,34 @@ var ProjectPresenter = function(pObj){
 		let onSave = iFormPresenter.createItem.bind(iFormPresenter);
 		this.view.loadModal(iFormPresenter.getView(), onSave);
 	};
-/*
-	this.createItem = function(args){
-		this.projectModel.newItem(args);
-		this.reload();
-	};
-*/
+
 	this.toggleShowCompleted = function(){
 		this.allowShowCompleted = !this.allowShowCompleted;
 		this.reload();
 	};
 
 	this.markCompleted = function(itemId){
-		console.log(`this.markCompleted: projectModel: ${this.projectModel.title}`);
 		let item = this.projectModel.items.find(i => i.id === itemId);
-		console.log(`item is ${item}`);
 		item.update({ isComplete: true });
 		this.reload();
 	};
 
-	this.setView = function(view){
-		this.view = view; 
-	};
-
-	this.loadView = function(){
-		console.log("ProjectPresenter.loadView");
-		if(!this.view.isInitialized()){
-			console.log("View isn't initialized");
-			this.view.initialize();
-			this.view.callbacks.markCompleted = this.markCompleted.bind(this);
-			this.view.callbacks.toggleShowCompleted = this.toggleShowCompleted.bind(this);
-			this.view.callbacks.addItem = this.newItem.bind(this);
-		}
-		this.view.load({ project: this.projectModel, items: this.projectItems });
-	};
-
-	this.getView = function(){
-		return this.view;
+	this.afterInitialize = function(){
+		this.view.callbacks.markCompleted = this.markCompleted.bind(this);
+		this.view.callbacks.toggleShowCompleted = this.toggleShowCompleted.bind(this);
+		this.view.callbacks.addItem = this.newItem.bind(this);
 	};
 
 	this.setView(ProjectView);
-};
-
-var ItemPresenter = function(iObj){
-	Object.setPrototypeOf(this, Object.create(SynchronizingPresenter));
-	this.subscribeToChanged();
-
-	this.itemModel = iObj;
-
-	this.view = null;
-
-	this.load = function(){
-		console.log("Called ItemViewModel.load");
-		this.loadView();
-	};
-
-	this.updateItem = function(args){
-		this.itemModel.update(args);
-		this.reload();
-	};
-
-	this.setView = function(view){
-		this.view = view; 
-	};
-
-	this.loadView = function(){
-		if(!this.view.isInitialized()){
-			this.view.initialize();
-		}
-		view.load(this.itemModels);
-	};
-
-	this.getView = function(){
-		return this.view;
-	};
-
-	this.setView(itemView);
 };
 
 var DayPresenter = function(date){
 	Object.setPrototypeOf(this, Object.create(SynchronizingPresenter));
 	this.subscribeToChanged();
 
-	this.itemModels = [];
 	this.date = date;
 
-	this.view = null;
-
-	this.title = function(){
+	this.getTitle =	function(){
 		let title = "";
 		let today = new Date();
 		let tomorrow = new Date(Date.now() + (24*60*60*1000));
@@ -911,15 +888,15 @@ var DayPresenter = function(date){
 		return title;
 	};
 
-	this.load = function(){
-		console.log("Called DayViewModel.load");
-		this.itemModels = Items.filter(i => { 
+	this.viewProps = { title: this.getTitle(), };
+
+	this.beforeLoad = function(){
+		let items = Items.filter(i => { 
 			return isSameDay(i.date, this.date); 
 		});
-
-		console.log("this.itemModels is:");
-		console.log(this.itemModels);
-		this.loadView();
+		let itemsPresenter = new ItemsPresenter(items);
+		itemsPresenter.load();
+		this.viewProps.subview = itemsPresenter.getView(); 
 	};
 
 	this.createItem = function(args){
@@ -928,77 +905,61 @@ var DayPresenter = function(date){
 		this.reload();
 	};
 
-	this.setView = function(view){
-		this.view = view; 
-	};
-
-	this.loadView = function(){
-		if(!this.view.isInitialized()){
-			this.view.initialize(this.title());
-		}
-		this.view.load(this.itemModels);
-	};
-
-	this.getView = function(){
-		return this.view;
-	};
-
-	this.setView(new ItemsView());
+	this.setView(new TemplateView());
 };
+
+var TemplateView = function(){
+
+	this._initialize = function(){
+		this.container = document.createElement("div");
+		this.titleEl = document.createElement("h2");
+		this.subviewContainer = document.createElement("div");
+
+		this.container.appendChild(this.titleEl);
+		this.container.appendChild(this.subviewContainer);
+	}
+
+	this.load = function(viewProps){
+		this.titleEl.innerHTML = viewProps.title;
+		this.subviewContainer.replaceChildren();
+		this.subviewContainer.appendChild(viewProps.subview.container);
+	}
+}
+
+TemplateView.prototype = Object.create(View);
 
 var PeriodPresenter = function(startDate, endDate){
 	Object.setPrototypeOf(this, Object.create(SynchronizingPresenter));
 	this.subscribeToChanged();
 	
-	this.itemModels = [];
 	this.startDate = startDate;
 	this.endDate = endDate;
 
-	this.view = null;
+	this.viewProps = { itemModels: [] };
+	this.viewProps.title = `${format(this.startDate, 'MM/dd')} to ${format(this.endDate, 'MM/dd')}`;
 
-	this.load = function(){
-		console.log("Called PeriodViewModel.load");
-		this.itemModels = Items.filter(i => {
+	this.beforeLoad = function(){
+		let items  = Items.filter(i => {
 			return i.date >= startOfDay(this.startDate) &&
 			       i.date <= endOfDay(this.endDate);
 		});
-		this.loadView();
+
+		let itemsPresenter = new ItemsPresenter(items);
+		itemsPresenter.load();
+		this.viewProps.subview = itemsPresenter.getView();
 	};
 
-	this.setView = function(view){
-		this.view = view; 
-	};
-
-	this.title = function(){
-		return `${format(this.startDate, 'MM/dd')} to ${format(this.endDate, 'MM/dd')}`;
-	};
-
-	this.loadView = function(){
-		if(!this.view.isInitialized()){
-			this.view.initialize(this.title());
-		}
-		this.view.load(this.itemModels);
-	};
-
-	this.getView = function(){
-		return this.view;
-	}
-
-	this.setView(new ItemsView()) //set default view;
+	this.setView(new TemplateView()) //set default view;
 };
 
 var ItemFormPresenter = function(opts = {}){
 	Object.setPrototypeOf(this, Object.create(SynchronizingPresenter));
 	
-	this.view = null;
 	this.defaultValues = Object.assign({ projectId: "", 
 			       		     date: format(new Date(), 'yyyy-MM-dd'), 
 	                                     priority: 0, }, opts);
 
-	this.load = function(){
-		console.log("Called ItemFormPresenter.load");
-		this.loadView();
-	};
+	this.viewProps = {};
 
 	this.createItem = function(){
 		let args = this.getFormData();
@@ -1006,23 +967,15 @@ var ItemFormPresenter = function(opts = {}){
 		this.emitChanged();
 	};
 
-	this.setView = function(view){
-		this.view = view; 
-		this.view.onSave = this.createItem.bind(this);
+	this.beforeInitialize = function(){
+	        this.view.onSave = this.createItem.bind(this);
 	};
 
-	this.loadView = function(){
-		if(!this.view.isInitialized()){
-			this.view.initialize();
-			this.view.projectIdInput.value = this.defaultValues.projectId;
-			this.view.dateInput.value = this.defaultValues.date
-		}
-		this.view.load(this.itemModels);
+	this.afterInitialize = function(){
+		this.view.projectIdInput.value = this.defaultValues.projectId;
+		this.view.dateInput.value = this.defaultValues.date;
+		this.view.priorityInput.value = this.defaultValues.priority;
 	};
-
-	this.getView = function(){
-		return this.view;
-	}
 
 	this.getFormData = function(){
 		return this.view.getFormData();
@@ -1035,34 +988,15 @@ var ProjectFormPresenter = function(){
 	Object.setPrototypeOf(this, Object.create(SynchronizingPresenter));
 	//does not reload so does not need to subscribe to onChanged event	
 
-	this.view = null;
-
 	this.createProject = function(){
 		let args = this.getFormData();
 		Projects.create(args);
 		this.emitChanged();
 	};
 
-	this.load = function(){
-		console.log("Called ProjectFormPresenter.load");
-		this.loadView();
+	this.beforeInitialize = function(){
+		this.view.onSave = this.createProject.bind(this);
 	};
-
-	this.setView = function(view){
-		this.view = view; 
-		view.onSave = this.createProject.bind(this);
-	};
-
-	this.loadView = function(){
-		if(!this.view.isInitialized()){
-			this.view.initialize();
-		}
-		this.view.load();
-	};
-
-	this.getView = function(){
-		return this.view;
-	}
 
 	this.getFormData = function(){
 		return this.view.getFormData();
@@ -1284,7 +1218,28 @@ var ItemFormView = function(){
 	}
 };
 
-var ItemsView = function(){
+
+var ItemPresenter = function(item){
+	Object.setPrototypeOf(this, Object.create(SynchronizingPresenter));
+	
+	this.itemModel = item;
+
+	this.markComplete = function(){
+		this.itemModel.isComplete = true;
+		this.reload();
+	}
+
+	this.viewProps = { title: this.itemModel.title, 
+			   date: format(this.itemModel.date, 'MM/dd'),
+			   priority: this.itemModel.priority, 
+			   isComplete: this.itemModel.isComplete,
+			   markComplete: this.markComplete.bind(this), };
+
+
+	this.setView(new ItemView());
+};
+
+var ItemView = function(){
 	this.container = null;
 	this.itemTitle = null;
 	this.itemDate = null;
@@ -1292,13 +1247,7 @@ var ItemsView = function(){
 
 	this._initialize = function(){
 		this.container = document.createElement("div");
-		this.titleEl = document.createElement("h2");
-		this.titleEl.innerHTML = title;
-		this.container.appendChild(this.titleEl);
-		this.itemContainer = document.createElement("ul");
-		this.container.appendChild(this.itemContainer);
-		this._isInitialized = true;
-	};
+		this.container.className = "d-flex";
 
 		this.itemTitle = document.createElement("p");
 		this.itemDate = document.createElement("p");
