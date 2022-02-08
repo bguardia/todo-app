@@ -85,6 +85,7 @@ var Item = function(args = {}) {
 	this.title = args.title || "new item";
 	this.description = args.description || "";
 	this.date = args.date || Date.now();
+	this.priority = args.priority || 0; //low to high: 0 to 4
 	/*
 	this.isAllDay = false;
 	this.startTime = this.isAllDay ? "00:00" : args.startTime; //if no time is given, treat as all-day
@@ -992,7 +993,7 @@ var ItemFormPresenter = function(opts = {}){
 	this.view = null;
 	this.defaultValues = Object.assign({ projectId: "", 
 			       		     date: format(new Date(), 'yyyy-MM-dd'), 
-	                                   }, opts);
+	                                     priority: 0, }, opts);
 
 	this.load = function(){
 		console.log("Called ItemFormPresenter.load");
@@ -1238,12 +1239,21 @@ var ItemFormView = function(){
 		this.container = document.createElement("div");
 		this.projectIdInput = document.createElement("input");
 		this.projectIdInput.setAttribute("type", "hidden");
+		
 		this.titleInputContainer = components.createInput({ label: "New Task", name: "title", placeholder: "Task name" });
 		this.titleInput = this.titleInputContainer.querySelector("input");
+		
 		this.dateInput = document.createElement("input");
 		this.dateInput.setAttribute("type", "date");
+
+		this.priorityInput = document.createElement("input");
+		this.priorityInput.setAttribute("type", "number");
+		this.priorityInput.setAttribute("min", 0);
+		this.priorityInput.setAttribute("max", 4);
+
 		this.container.appendChild(this.titleInputContainer);
 		this.container.appendChild(this.dateInput);
+		this.container.appendChild(this.priorityInput);
 		this.container.appendChild(this.projectIdInput);
 		this._isInitialized = true;
 	};
@@ -1259,7 +1269,8 @@ var ItemFormView = function(){
 		console.log("ItemFormView.getFormData:");
 		let formData =  { title: this.titleInput.value,
 		         	  date: new Date(this.dateInput.value),
-		         	  projectId: this.projectIdInput.value };
+		         	  projectId: this.projectIdInput.value,
+				  priority: this.priorityInput.value, };
 		console.log(formData);
 		return formData;
 	};
@@ -1275,10 +1286,11 @@ var ItemFormView = function(){
 
 var ItemsView = function(){
 	this.container = null;
-	this.itemContainer = null;
-	this._isInitialized = false;
+	this.itemTitle = null;
+	this.itemDate = null;
+	this.itemPriority = null;
 
-	this.initialize = function(title){
+	this._initialize = function(){
 		this.container = document.createElement("div");
 		this.titleEl = document.createElement("h2");
 		this.titleEl.innerHTML = title;
@@ -1288,29 +1300,37 @@ var ItemsView = function(){
 		this._isInitialized = true;
 	};
 
-	this.load = function(items){
-		console.log("ItemsView items are:");
-		console.log(items);
-		this.itemContainer.replaceChildren();
-		items.forEach(i => {
-			let itemLi = document.createElement("li");
-			itemLi.innerHTML = "Item: " + i.title;
-			this.itemContainer.appendChild(itemLi);
-		});
+		this.itemTitle = document.createElement("p");
+		this.itemDate = document.createElement("p");
+		this.itemPriority = document.createElement("p");
+
+		this.container.appendChild(this.itemTitle);
+		this.container.appendChild(this.itemDate);
+		this.container.appendChild(this.itemPriority);
 	};
 
-	this.renderIn = function(parentEl){
-		parentEl.appendChild(this.container);
+	this._markCompleteButton = function(markComplete){
+		let completeBtn = document.createElement("button");
+		completeBtn.innerHTML = "Mark Complete";
+		completeBtn.addEventListener("click", markComplete);
+		return completeBtn; 
 	};
 
-	this.remove = function(){
-		this.container.remove();
-	};
+	this.load = function(iObj){
+		this.itemTitle.innerHTML = iObj.title;
+		this.itemDate.innerHTML = iObj.date;
+		this.itemPriority.innerHTML = iObj.priority;
 
-	this.isInitialized = function(){
-		return this._isInitialized;
-	}
+		if(iObj.isComplete && this.completeBtn){
+			this.completeBtn.remove();
+		} else if(!iObj.isComplete && !this.completeBtn){
+			this.completeBtn = this._markCompleteButton(iObj.markComplete);
+			this.container.appendChild(this.completeBtn);
+		}
+	};
 }
+
+ItemView.prototype = Object.create(View);
 
 var testAppView = function(){
 	toDoApp.load();
