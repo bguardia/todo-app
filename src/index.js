@@ -914,17 +914,19 @@ var ProjectPresenter = function(pObj){
 	this.viewProps = { project: pObj };
 	this.allowShowCompleted = false;
 
+	this.items = [];
+	this.itemsPresenter = new ItemsPresenter(this.items);
+
 	this.beforeLoad = function(){
-		let items = [];
+		this.items.splice(0, this.items.length);
 		this.projectModel.items.forEach(i => {
 			if(this.allowShowCompleted || !i.isComplete){
-				items.push(i);
+				this.items.push(i);
 			}
 		});
 
-		let itemsPresenter = new ItemsPresenter(items);
-		itemsPresenter.load();
-		this.viewProps.subview = itemsPresenter.getView();
+		this.itemsPresenter.load();
+		this.viewProps.subview = this.itemsPresenter.getView();
 	}
 
 	this.updateProject = function(args){
@@ -963,8 +965,10 @@ var DayPresenter = function(date){
 	Object.setPrototypeOf(this, Object.create(SynchronizingPresenter));
 	this.subscribeToChanged();
 
+	this.items = [];
 	this.date = date;
 	this.showCompleted = false;
+	this.itemsPresenter = new ItemsPresenter(this.items);
 
 	this.getTitle =	function(){
 		let title = "";
@@ -1001,12 +1005,15 @@ var DayPresenter = function(date){
 	};
 
 	this.beforeLoad = function(){
-		let items = Items.filter(i => { 
-			return (this.showCompleted || !i.isComplete) && isSameDay(i.date, this.date); 
+		this.items.splice(0, this.items.length); //clear array
+		Items.all().forEach(i => { 
+			if((this.showCompleted || !i.isComplete) && isSameDay(i.date, this.date)){
+				this.items.push(i);
+			}
 		});
-		let itemsPresenter = new ItemsPresenter(items);
-		itemsPresenter.load();
-		this.viewProps.subview = itemsPresenter.getView(); 
+		//let itemsPresenter = new ItemsPresenter(items);
+		this.itemsPresenter.load();
+		this.viewProps.subview = this.itemsPresenter.getView(); 
 	};
 
 	this.createItem = function(args){
@@ -1085,7 +1092,10 @@ var PeriodPresenter = function(startDate, endDate){
 	this.endDate = endDate;
 	this.showCompleted = false;
 
-	this.viewProps = { itemModels: [] };
+	this.items = [];
+	this.itemsPresenter = new ItemsPresenter(this.items);
+
+	this.viewProps = { };
 	this.viewProps.title = `${format(this.startDate, 'MM/dd')} to ${format(this.endDate, 'MM/dd')}`;
 
 	this.addItem = function(){
@@ -1104,15 +1114,17 @@ var PeriodPresenter = function(startDate, endDate){
 		this.view.callbacks.toggleShowCompleted = this.toggleShowCompleted.bind(this);
 	};
 	this.beforeLoad = function(){
-		let items  = Items.filter(i => {
-			return i.date >= startOfDay(this.startDate) &&
-			       i.date <= endOfDay(this.endDate) && 
-			       (this.showCompleted || !i.isComplete);
+		this.items.splice(0, this.items.length);
+		Items.all().forEach(i => {
+			if(i.date >= startOfDay(this.startDate) &&
+			   i.date <= endOfDay(this.endDate) && 
+			   (this.showCompleted || !i.isComplete)){
+				this.items.push(i);
+			}
 		});
 
-		let itemsPresenter = new ItemsPresenter(items);
-		itemsPresenter.load();
-		this.viewProps.subview = itemsPresenter.getView();
+		this.itemsPresenter.load();
+		this.viewProps.subview = this.itemsPresenter.getView();
 	};
 
 	this.setView(new TemplateView()) //set default view;
