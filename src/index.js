@@ -662,7 +662,7 @@ var View = {
 		throw "No load method has been defined";
 	},
 	render: function(){
-		//Any special rendering for main view (document.body.appendChild(this.container) ?)
+		document.body.appendChild(this.container);
 	},
 	renderIn: function(parentEl){
 		parentEl.appendChild(this.container);
@@ -971,6 +971,8 @@ var ItemFormPresenter = function(opts = {}){
 		this.emitChanged();
 	};
 
+	this.onSave = this.createItem.bind(this);
+
 	this.beforeInitialize = function(){
 	        this.view.onSave = this.createItem.bind(this);
 	};
@@ -1253,6 +1255,41 @@ var ItemView = function(){
 }
 
 ItemView.prototype = Object.create(View);
+
+var ModalView = function(){
+	this.render = function(){
+		document.body.appendChild(this.container);
+		this.modal.show();
+	};
+
+	this.load = function(viewProps){
+		this.container = components.modal(viewProps.title, viewProps.subview.container);
+		this.saveBtn = this.container.querySelector("#modal-save-btn");
+		this.modal = new Modal(this.container);
+		this.saveBtn.addEventListener("click", function(e){
+			viewProps.onSave(e)
+			this.modal.hide();
+			this.remove();
+		}.bind(this));
+	}
+};
+ModalView.prototype = Object.create(View);
+
+
+var ModalFormPresenter = function(FormPresenter, opts = {}){
+	Object.setPrototypeOf(this, SynchronizingPresenter);
+	this.viewProps = {};
+
+	this.beforeLoad = function(){
+		let presenter = new FormPresenter(opts);
+		presenter.load();
+		this.viewProps.subview = presenter.getView();
+		this.viewProps.onSave = presenter.onSave.bind(presenter);
+	};
+
+	this.setView(new ModalView());
+};
+
 
 var testAppView = function(){
 	toDoApp.load();
