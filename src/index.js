@@ -826,12 +826,16 @@ var ProjectPresenter = function(pObj){
 	this.allowShowCompleted = false;
 
 	this.beforeLoad = function(){
-		this.viewProps.items = [];
+		let items = [];
 		this.projectModel.items.forEach(i => {
 			if(this.allowShowCompleted || !i.isComplete){
-				this.viewProps.items.push(i);
+				items.push(i);
 			}
 		});
+
+		let itemsPresenter = new ItemsPresenter(items);
+		itemsPresenter.load();
+		this.viewProps.subview = itemsPresenter.getView();
 	}
 
 	this.updateProject = function(args){
@@ -1015,7 +1019,6 @@ var ProjectView = (function(){
 	projectView.newItemButton = null;
 	projectView.toggleShowCompletedItemsButton = null;
 	projectView.itemContainer = null;
-	projectView.items = {};
 	projectView.callbacks = { markCompleted: null,
 			  	  toggleShowCompleted: null,
 	                          addItem: null, };
@@ -1064,29 +1067,12 @@ var ProjectView = (function(){
 		projectView.callbacks.toggleShowCompleted();
 	};
 
-	let createItem = function() {
-		let container = document.createElement("div");
-		container.className = "d-flex";
-		let completeBtn = document.createElement("button");
-		completeBtn.innerHTML = "Mark complete";
-		let itemTitle = document.createElement("p");
-		let itemDate = document.createElement("p");
-		container.appendChild(itemTitle);
-		container.appendChild(itemDate);
-		container.appendChild(completeBtn);
-		return { container: container,
-			 itemTitle: itemTitle,
-			 itemDate: itemDate,
-			 completeBtn: completeBtn, };
-	};
-
 	projectView._clear = function(){//empty all DOM elements
 		console.log("Called projectView._clear");
 		this.projectTitle = null;
 		this.projectDesc = null;
 		this.newItemButton = null;
 		this.itemContainer = null;
-		this.items = {};
 		this.callbacks = { markCompleted: null, 
 		              toggleShowCompleted: null, };
 	};
@@ -1095,24 +1081,8 @@ var ProjectView = (function(){
 		this.itemContainer.replaceChildren();
 		this.projectTitle.innerHTML = "Project: " + args.project.title;
 		this.projectDesc.innerHTML = "Description: " + args.project.description;
-		args.items.forEach((i) => {
-			let itemLi = loadItem(i);
-			this.itemContainer.appendChild(itemLi);
-		});
-	};
-	let loadItem = function(item){
-		let thisItemEl = projectView.items[item.id];
-		if(!thisItemEl){
-			thisItemEl = createItem();
-			projectView.items[item.id] = thisItemEl;
-			let markCompleted = projectView.callbacks.markCompleted;
-			thisItemEl.completeBtn.addEventListener("click", () => { markCompleted(item.id)});
-		}
 
-		thisItemEl.itemTitle.innerHTML = item.title;
-		thisItemEl.itemDate.innerHTML = format(item.date, 'MM/dd');
-
-		return thisItemEl.container;
+		this.itemContainer.appendChild(args.subview.container); //ItemsView
 	};
 
 	projectView.loadModal = function(view, onSave){
