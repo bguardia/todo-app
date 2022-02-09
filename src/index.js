@@ -779,8 +779,46 @@ var ItemsPresenter = function(items){
 
 	this.items = items;
 	this.viewProps = {};
+	this.sortBy = "date";
+	this.sortOrder = "asc";
+
+	this.changeSort = function(sortOpts){
+		let sortChanged = false
+		if(sortOpts.sortBy && this.sortBy != sortOpts.sortBy){
+			this.sortBy = sortOpts.sortBy;
+			sortChanged = true;
+		}
+		if(sortOpts.sortOrder && this.sortOrder != sortOpts.sortOrder){
+			this.sortOrder = sortOpts.sortOrder;
+			sortChanged = true;
+		}
+		if(sortChanged){
+			this.reload(false); //Don't emit onChanged
+		}
+	};
+
+	this.sortItems = function(){
+		let sortOrder = this.sortOrder == "desc" ? -1 : 1;
+
+		this.items.sort((a, b) => {
+			if(a[this.sortBy] > b[this.sortBy]){
+				return sortOrder * 1;
+			}else if(a[this.sortBy] < b[this.sortBy]){
+				return sortOrder * -1;
+			}
+			return 0;
+		});	
+	};
+
+	this.beforeInitialize = function(){
+		this.view.callbacks.changeSort = this.changeSort.bind(this);
+	};
 
 	this.beforeViewLoad = function(){
+		this.sortItems();
+		this.viewProps.sortBy = this.sortBy;
+		this.viewProps.sortOrder = this.sortOrder;
+
 		let itemComponents = this.items.map(i => { 
 			let iPresenter = new ItemPresenter(i);
 			iPresenter.load();
@@ -793,17 +831,68 @@ var ItemsPresenter = function(items){
 
 var ItemsView = function(){
 
+	this.callbacks = {};
+
 	this._initialize = function(title){
 		this.container = document.createElement("div");
 		this.itemsContainer = document.createElement("ul");
+		
+		//sortBySelector
+		this.sortBySelector = document.createElement("select");
+		this.sortBySelector.name = "sortBy";
+		["date", "priority"].forEach(str => {
+			let option = document.createElement("option");
+			option.value = str;
+			option.innerHTML = str;
+			this.sortBySelector.appendChild(option);
+		});
+		
+
+		//sortOrderSelector
+		this.sortOrderSelector = document.createElement("select");
+		this.sortOrderSelector.name = "sortOrder";
+		[{ innerHTML: "descending", value: "desc"}, 
+		 { innerHTML: "ascending", value: "asc"  }].forEach(obj => {
+			let option = document.createElement("option");
+			option.innerHTML = obj.innerHTML;
+			option.value = obj.value;
+			this.sortOrderSelector.appendChild(option);
+		});
+
+		let changeSort = this.callbacks.changeSort;
+		[this.sortBySelector, this.sortOrderSelector].forEach(el => {
+			el.addEventListener("change", function(){
+				let sortOpts = {};
+				sortOpts[this.name] = this.value;
+				changeSort(sortOpts);
+			});
+			this.container.appendChild(el);
+		});
 
 		this.container.appendChild(this.itemsContainer);
+
 	};
 
-	this.load = function({ itemComponents }){
+	this.load = function(viewProps){
+		Array.from(this.sortBySelector.children).forEach(el => {
+			if(el.value == viewProps.sortBy){
+				el.setAttribute("selected", "");
+			}else{
+				el.removeAttribute("selected");
+			}
+		});
+
+		Array.from(this.sortOrderSelector.children).forEach(el => {
+			if(el.value == viewProps.sortOrder){
+				el.setAttribute("selected", true);
+			}else{
+				el.setAttribute("selected", false);
+			}
+		});
+
 		this.itemsContainer.replaceChildren();
-		if(!!itemComponents.length){
-			itemComponents.forEach(i => {
+		if(!!viewProps.itemComponents.length){
+			viewProps.itemComponents.forEach(i => {
 				this.itemsContainer.appendChild(i.container);
 			});
 		}
