@@ -782,6 +782,12 @@ var ItemsPresenter = function(items){
 	this.sortBy = "date";
 	this.sortOrder = "asc";
 
+	this.showCompleted = false;
+	this.toggleShowCompleted = function(){
+		this.showCompleted = !this.showCompleted;
+		this.reload();
+	};
+
 	this.changeSort = function(sortOpts){
 		let sortChanged = false
 		if(sortOpts.sortBy && this.sortBy != sortOpts.sortBy){
@@ -812,6 +818,7 @@ var ItemsPresenter = function(items){
 
 	this.beforeInitialize = function(){
 		this.view.callbacks.changeSort = this.changeSort.bind(this);
+		this.view.callbacks.toggleShowCompleted = this.toggleShowCompleted.bind(this);
 	};
 
 	this.beforeViewLoad = function(){
@@ -820,7 +827,8 @@ var ItemsPresenter = function(items){
 		this.viewProps.sortOrder = this.sortOrder;
 
 		let itemComponents = this.items.map(i => { 
-			let iPresenter = new ItemPresenter(i);
+			let hide = !(this.showCompleted || !i.isComplete);
+			let iPresenter = new ItemPresenter(i, { hide });
 			iPresenter.load();
 			return iPresenter.getView(); });
 		this.viewProps.itemComponents = itemComponents;
@@ -837,6 +845,16 @@ var ItemsView = function(){
 		this.container = document.createElement("div");
 		this.itemsContainer = document.createElement("ul");
 		
+		//toggleShowCompletedItemsButton
+		let toggleCallback = this.toggleShowCompleted.bind(this);
+		this.toggleShowCompletedItemsButton = components.button("Show Completed Items");
+		this.toggleShowCompletedItemsButton.setAttribute("data-state", "show");
+		this.toggleShowCompletedItemsButton.addEventListener("click", function(){
+			toggleCallback(this);
+		});
+
+		this.container.appendChild(this.toggleShowCompletedItemsButton);
+
 		//sortBySelector
 		this.sortBySelector = document.createElement("select");
 		this.sortBySelector.name = "sortBy";
@@ -871,6 +889,18 @@ var ItemsView = function(){
 
 		this.container.appendChild(this.itemsContainer);
 
+	};
+
+	this.toggleShowCompleted = function(btn){
+		let btnState = btn.getAttribute("data-state");
+		if(btnState == "show"){
+			btn.setAttribute("data-state", "hide");
+			btn.innerHTML = "Hide Completed Items";
+		}else{
+			btn.setAttribute("data-state", "show");
+			btn.innerHTML = "Show Completed Items";
+		}
+		this.callbacks.toggleShowCompleted();
 	};
 
 	this.load = function(viewProps){
@@ -919,11 +949,7 @@ var ProjectPresenter = function(pObj){
 
 	this.beforeLoad = function(){
 		this.items.splice(0, this.items.length);
-		this.projectModel.items.forEach(i => {
-			if(this.allowShowCompleted || !i.isComplete){
-				this.items.push(i);
-			}
-		});
+		this.projectModel.items.forEach(i => { this.items.push(i) });
 
 		this.itemsPresenter.load();
 		this.viewProps.subview = this.itemsPresenter.getView();
@@ -941,20 +967,7 @@ var ProjectPresenter = function(pObj){
 		this.view.loadModal(iFormPresenter.getView(), onSave);
 	};
 
-	this.toggleShowCompleted = function(){
-		this.allowShowCompleted = !this.allowShowCompleted;
-		this.reload();
-	};
-
-	this.markCompleted = function(itemId){
-		let item = this.projectModel.items.find(i => i.id === itemId);
-		item.update({ isComplete: true });
-		this.reload();
-	};
-
 	this.afterInitialize = function(){
-		this.view.callbacks.markCompleted = this.markCompleted.bind(this);
-		this.view.callbacks.toggleShowCompleted = this.toggleShowCompleted.bind(this);
 		this.view.callbacks.addItem = this.newItem.bind(this);
 	};
 
@@ -967,7 +980,6 @@ var DayPresenter = function(date){
 
 	this.items = [];
 	this.date = date;
-	this.showCompleted = false;
 	this.itemsPresenter = new ItemsPresenter(this.items);
 
 	this.getTitle =	function(){
@@ -994,24 +1006,17 @@ var DayPresenter = function(date){
 		modalPresenter.view.render();
 	};
 
-	this.toggleShowCompleted = function(){
-		this.showCompleted = !this.showCompleted;
-		this.reload();
-	};
-
 	this.beforeInitialize = function(){
 		this.view.callbacks.addItem = this.addItem.bind(this);
-		this.view.callbacks.toggleShowCompleted = this.toggleShowCompleted.bind(this);
 	};
 
 	this.beforeLoad = function(){
 		this.items.splice(0, this.items.length); //clear array
 		Items.all().forEach(i => { 
-			if((this.showCompleted || !i.isComplete) && isSameDay(i.date, this.date)){
+			if(isSameDay(i.date, this.date)){
 				this.items.push(i);
 			}
 		});
-		//let itemsPresenter = new ItemsPresenter(items);
 		this.itemsPresenter.load();
 		this.viewProps.subview = this.itemsPresenter.getView(); 
 	};
@@ -1037,34 +1042,14 @@ var TemplateView = function(){
 		this.titleEl = document.createElement("h2");
 		this.subviewContainer = document.createElement("div");
 
-		this.toggleShowCompletedItemsButton = components.button("Show Completed Items");
-		this.toggleShowCompletedItemsButton.setAttribute("data-state", "show");
-		let toggleCallback = this.toggleShowCompleted.bind(this);
-		this.toggleShowCompletedItemsButton.addEventListener("click", function(){
-			toggleCallback(this);
-		});
-
 		this.newItemButton = components.button("Add Item");
 		this.newItemButton.addEventListener("click", function(){
 			this.callbacks.addItem();
 		}.bind(this));
 
 		this.container.appendChild(this.titleEl);
-		this.container.appendChild(this.toggleShowCompletedItemsButton);
 		this.container.appendChild(this.subviewContainer);
 		this.container.appendChild(this.newItemButton);
-	};
-
-	this.toggleShowCompleted = function(btn){
-		let btnState = btn.getAttribute("data-state");
-		if(btnState == "show"){
-			btn.setAttribute("data-state", "hide");
-			btn.innerHTML = "Hide Completed Items";
-		}else{
-			btn.setAttribute("data-state", "show");
-			btn.innerHTML = "Show Completed Items";
-		}
-		this.callbacks.toggleShowCompleted();
 	};
 
 	this._clear = function(){//empty all DOM elements
@@ -1104,21 +1089,15 @@ var PeriodPresenter = function(startDate, endDate){
 		modalPresenter.view.render();
 	};
 
-	this.toggleShowCompleted = function(){
-		this.showCompleted = !this.showCompleted;
-		this.reload();
-	};
-
 	this.beforeInitialize = function(){
 		this.view.callbacks.addItem = this.addItem.bind(this);
-		this.view.callbacks.toggleShowCompleted = this.toggleShowCompleted.bind(this);
 	};
+
 	this.beforeLoad = function(){
 		this.items.splice(0, this.items.length);
 		Items.all().forEach(i => {
 			if(i.date >= startOfDay(this.startDate) &&
-			   i.date <= endOfDay(this.endDate) && 
-			   (this.showCompleted || !i.isComplete)){
+			   i.date <= endOfDay(this.endDate)){
 				this.items.push(i);
 			}
 		});
@@ -1185,15 +1164,12 @@ var ProjectFormPresenter = function(){
 	this.setView(new ProjectFormView()) //set default view;
 };
 
-/* Subviews
-*/
 
 var ProjectView = (function(){
 	let projectView = Object.create(View);
 	projectView.projectTitle = null;
 	projectView.projectDesc = null;
 	projectView.newItemButton = null;
-	projectView.toggleShowCompletedItemsButton = null;
 	projectView.itemContainer = null;
 	projectView.callbacks = { markCompleted: null,
 			  	  toggleShowCompleted: null,
@@ -1214,33 +1190,15 @@ var ProjectView = (function(){
 		this.projectDesc = document.createElement("p");
 		this.itemContainer = document.createElement("ul");
 
-		this.toggleShowCompletedItemsButton = components.button("Show Completed Items");
-		this.toggleShowCompletedItemsButton.setAttribute("data-state", "show");
-		this.toggleShowCompletedItemsButton.addEventListener("click", function(){
-			projectView.toggleShowCompleted(this);
-		});
-
 		this.newItemButton = components.button("Add Item");
 		this.newItemButton.addEventListener("click", function(){
 			this.callbacks.addItem();
 		}.bind(this));
+
 		this.container.appendChild(this.projectTitle);
 		this.container.appendChild(this.projectDesc);
-		this.container.appendChild(this.toggleShowCompletedItemsButton);
 		this.container.appendChild(this.itemContainer);
 		this.container.appendChild(this.newItemButton);
-	};
-
-	projectView.toggleShowCompleted = function(btn){
-		let btnState = btn.getAttribute("data-state");
-		if(btnState == "show"){
-			btn.setAttribute("data-state", "hide");
-			btn.innerHTML = "Hide Completed Items";
-		}else{
-			btn.setAttribute("data-state", "show");
-			btn.innerHTML = "Show Completed Items";
-		}
-		projectView.callbacks.toggleShowCompleted();
 	};
 
 	projectView._clear = function(){//empty all DOM elements
@@ -1368,7 +1326,7 @@ var ItemFormView = function(){
 };
 
 
-var ItemPresenter = function(item){
+var ItemPresenter = function(item, opts = {}){
 	Object.setPrototypeOf(this, Object.create(SynchronizingPresenter));
 	
 	this.itemModel = item;
@@ -1384,6 +1342,7 @@ var ItemPresenter = function(item){
 			   isComplete: this.itemModel.isComplete,
 			   markComplete: this.markComplete.bind(this), };
 
+	Object.assign(this.viewProps, opts);
 
 	this.setView(new ItemView());
 };
@@ -1424,6 +1383,12 @@ var ItemView = function(){
 		} else if(!iObj.isComplete && !this.completeBtn){
 			this.completeBtn = this._markCompleteButton(iObj.markComplete);
 			this.container.appendChild(this.completeBtn);
+		}
+
+		if(iObj.hide){
+			this.container.classList.add("d-none");
+		}else{
+			this.container.classList.remove("d-none");
 		}
 	};
 }
