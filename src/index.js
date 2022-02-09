@@ -875,6 +875,7 @@ var DayPresenter = function(date){
 	this.subscribeToChanged();
 
 	this.date = date;
+	this.showCompleted = false;
 
 	this.getTitle =	function(){
 		let title = "";
@@ -894,9 +895,25 @@ var DayPresenter = function(date){
 
 	this.viewProps = { title: this.getTitle(), };
 
+	this.addItem = function(){
+		let modalPresenter = new ModalFormPresenter(ItemFormPresenter, { date: format(this.date, 'yyyy-MM-dd'), });
+		modalPresenter.load();
+		modalPresenter.view.render();
+	};
+
+	this.toggleShowCompleted = function(){
+		this.showCompleted = !this.showCompleted;
+		this.reload();
+	};
+
+	this.beforeInitialize = function(){
+		this.view.callbacks.addItem = this.addItem.bind(this);
+		this.view.callbacks.toggleShowCompleted = this.toggleShowCompleted.bind(this);
+	};
+
 	this.beforeLoad = function(){
 		let items = Items.filter(i => { 
-			return isSameDay(i.date, this.date); 
+			return (this.showCompleted || !i.isComplete) && isSameDay(i.date, this.date); 
 		});
 		let itemsPresenter = new ItemsPresenter(items);
 		itemsPresenter.load();
@@ -913,15 +930,54 @@ var DayPresenter = function(date){
 };
 
 var TemplateView = function(){
+	this.titleEl = null;
+	this.subviewContainer = null;
+	this.toggleShowCompletedItemsButton = null;
+	this.newItemButton = null;
+	this.callbacks = {};
 
-	this._initialize = function(){
+	this._initialize = function(){//create DOM elements
 		this.container = document.createElement("div");
 		this.titleEl = document.createElement("h2");
 		this.subviewContainer = document.createElement("div");
 
+		this.toggleShowCompletedItemsButton = components.button("Show Completed Items");
+		this.toggleShowCompletedItemsButton.setAttribute("data-state", "show");
+		let toggleCallback = this.toggleShowCompleted.bind(this);
+		this.toggleShowCompletedItemsButton.addEventListener("click", function(){
+			toggleCallback(this);
+		});
+
+		this.newItemButton = components.button("Add Item");
+		this.newItemButton.addEventListener("click", function(){
+			this.callbacks.addItem();
+		}.bind(this));
+
 		this.container.appendChild(this.titleEl);
+		this.container.appendChild(this.toggleShowCompletedItemsButton);
 		this.container.appendChild(this.subviewContainer);
-	}
+		this.container.appendChild(this.newItemButton);
+	};
+
+	this.toggleShowCompleted = function(btn){
+		let btnState = btn.getAttribute("data-state");
+		if(btnState == "show"){
+			btn.setAttribute("data-state", "hide");
+			btn.innerHTML = "Hide Completed Items";
+		}else{
+			btn.setAttribute("data-state", "show");
+			btn.innerHTML = "Show Completed Items";
+		}
+		this.callbacks.toggleShowCompleted();
+	};
+
+	this._clear = function(){//empty all DOM elements
+		this.titleEl = null;
+		this.newItemButton = null;
+		this.subviewContainer = null;
+		this.callbacks = { addItem: null, 
+		                   toggleShowCompleted: null, };
+	};
 
 	this.load = function(viewProps){
 		this.titleEl.innerHTML = viewProps.title;
@@ -938,14 +994,31 @@ var PeriodPresenter = function(startDate, endDate){
 	
 	this.startDate = startDate;
 	this.endDate = endDate;
+	this.showCompleted = false;
 
 	this.viewProps = { itemModels: [] };
 	this.viewProps.title = `${format(this.startDate, 'MM/dd')} to ${format(this.endDate, 'MM/dd')}`;
 
+	this.addItem = function(){
+		let modalPresenter = new ModalFormPresenter(ItemFormPresenter, { date: format(this.startDate, 'yyyy-MM-dd'), });
+		modalPresenter.load();
+		modalPresenter.view.render();
+	};
+
+	this.toggleShowCompleted = function(){
+		this.showCompleted = !this.showCompleted;
+		this.reload();
+	};
+
+	this.beforeInitialize = function(){
+		this.view.callbacks.addItem = this.addItem.bind(this);
+		this.view.callbacks.toggleShowCompleted = this.toggleShowCompleted.bind(this);
+	};
 	this.beforeLoad = function(){
 		let items  = Items.filter(i => {
 			return i.date >= startOfDay(this.startDate) &&
-			       i.date <= endOfDay(this.endDate);
+			       i.date <= endOfDay(this.endDate) && 
+			       (this.showCompleted || !i.isComplete);
 		});
 
 		let itemsPresenter = new ItemsPresenter(items);
