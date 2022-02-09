@@ -582,15 +582,167 @@ var SynchronizingPresenter = {
 	},
 };
 
+//Main View
+//Sample of main functions
+var View = {
+	container: null,
+	_isInitialized: false,
+	_initialize: function(){
+		//Initialize DOM elements here
+	},
+	initialize: function(){
+		this._initialize();
+		this._isInitialized = true;
+	},
+	load: function(){
+		throw "No load method has been defined";
+	},
+	render: function(){
+		document.body.appendChild(this.container);
+	},
+	renderIn: function(parentEl){
+		parentEl.appendChild(this.container);
+	},
+	remove: function(){
+		this.container.remove();
+		this.clear();
+	},
+	_clear: function(){
+		//DOM elements to clear here
+	},
+	clear: function(){
+		this._clear();
+		this.container = null;
+		this._isInitialized = false;
+	},
+	isInitialized: function(){
+		return this._isInitialized;
+	},
+	/* only for main view
+	loadSubview: function(){
+		//display subview
+	},
+	loadModal: function(){
+
+	},*/
+};
+
+var ProjectListPresenter = function(){
+	Object.setPrototypeOf(this, Object.create(SynchronizingPresenter));
+	this.subscribeToChanged();
+
+	this.viewProps = { projects: {}, };
+
+	this.beforeLoad = function(){
+		Projects.all().forEach(p => {
+			if(!this.viewProps.projects[p.id]){
+				this.viewProps.projects[p.id] = { model: p,
+								  hideItems: true, };
+			}
+		});
+	}
+
+	this.toggleHidden = function(projectId){
+		this.viewProps.projects[projectId].hideItems = !this.viewProps.projects[projectId].hideItems;
+	}
+
+	this.beforeInitialize = function(){
+		this.view.callbacks.toggleHidden = this.toggleHidden.bind(this);
+	}
+
+	this.setView(new ProjectListView());
+};
+
+var ProjectListView = function(){
+
+	this.callbacks = {};
+
+	this._initialize = function(){
+		this.container = document.createElement("div");
+		this.projectListContainer = document.createElement("ul");
+		this.container.appendChild(this.projectListContainer);
+	};
+
+	this.toggleHidden = function(){
+		let targetId = this.getAttribute("data-target");
+		let targetEl = document.querySelector(`#${targetId}`);
+		targetEl.classList.toggle("d-none");
+		this.innerHTML = this.innerHTML == "+" ? "-" : "+";
+	};
+
+	this.getItemsListId = function(projectId){
+		return `project-${projectId}-items-list`;
+	};
+
+	this.createItemList = function(project){
+		let itemsListContainer = document.createElement("ul");
+		itemsListContainer.id = this.getItemsListId(project.id);
+		project.items.forEach(i => {
+			if(!i.isComplete){
+				let itemListItem = document.createElement("li");
+				itemListItem.innerHTML = i.title;
+				itemsListContainer.appendChild(itemListItem);
+			}
+		});
+
+		return itemsListContainer;
+	};
+
+	this.load = function(viewProps){
+		this.projectListContainer.replaceChildren();
+		Object.keys(viewProps.projects).forEach(key => {
+			let pObj = viewProps.projects[key]
+			let p = pObj.model;
+			let projectListItem = document.createElement("li");
+			let projectTitleContainer = document.createElement("div");
+			let projectTitleEl = document.createElement("a");
+			projectTitleEl.innerHTML = p.title;
+			projectTitleEl.addEventListener("click", () => ApplicationPresenter.projectView(p.id));
+
+			projectListItem.appendChild(projectTitleContainer);
+			projectTitleContainer.appendChild(projectTitleEl);
+
+			let toggleBtn = document.createElement("button");
+			toggleBtn.setAttribute("data-target", this.getItemsListId(p.id));
+			toggleBtn.setAttribute("data-project-id", p.id);
+
+			let toggleHidden = this.callbacks.toggleHidden;
+			toggleBtn.addEventListener("click", function(){
+				let targetId = this.getAttribute("data-target");
+				let targetEl = document.querySelector(`#${targetId}`);
+				targetEl.classList.toggle("d-none");
+				this.innerHTML = this.innerHTML == "+" ? "-" : "+";
+				toggleHidden(this.getAttribute("data-project-id"));
+			});
+			projectTitleContainer.appendChild(toggleBtn);
+
+			let itemsListContainer = this.createItemList(p);
+
+			if(pObj.hideItems){
+				itemsListContainer.className = "d-none";
+				toggleBtn.innerHTML = "+";
+			}else{
+				toggleBtn.innerHTML = "-";
+			}
+
+			projectListItem.appendChild(itemsListContainer);
+			this.projectListContainer.appendChild(projectListItem);
+		});
+	}
+};
+ProjectListView.prototype = Object.create(View);
+
 var ApplicationPresenter = (function (){
 	let subpresenter = null;
 
 	let appPresenter = Object.create(SynchronizingPresenter);
-	appPresenter.subscribeToChanged();
 	appPresenter.viewProps = {};
+	appPresenter.projectList = new ProjectListPresenter();
 
 	appPresenter.beforeLoad = function(){
-		appPresenter.viewProps.projects = Projects.all();	
+		//appPresenter.viewProps.projects = Projects.all();	
+		this.projectList.load();
+		this.viewProps.projectListView = this.projectList.getView();
 	};
 
 	//Subviews
@@ -646,50 +798,6 @@ var ApplicationPresenter = (function (){
 	return appPresenter;
 })();
 
-//Main View
-//Sample of main functions
-var View = {
-	container: null,
-	_isInitialized: false,
-	_initialize: function(){
-		//Initialize DOM elements here
-	},
-	initialize: function(){
-		this._initialize();
-		this._isInitialized = true;
-	},
-	load: function(){
-		throw "No load method has been defined";
-	},
-	render: function(){
-		document.body.appendChild(this.container);
-	},
-	renderIn: function(parentEl){
-		parentEl.appendChild(this.container);
-	},
-	remove: function(){
-		this.container.remove();
-		this.clear();
-	},
-	_clear: function(){
-		//DOM elements to clear here
-	},
-	clear: function(){
-		this._clear();
-		this.container = null;
-		this._isInitialized = false;
-	},
-	isInitialized: function(){
-		return this._isInitialized;
-	},
-	/* only for main view
-	loadSubview: function(){
-		//display subview
-	},
-	loadModal: function(){
-
-	},*/
-};
 
 var ApplicationView = (function(){
 	let view = Object.create(View);
@@ -724,9 +832,9 @@ var ApplicationView = (function(){
 	newItemButton.innerHTML = "New Item";
 	navContainer.appendChild(newItemButton);
 
-	let projectList = document.createElement("ul");
-	navContainer.appendChild(projectList);
-	let projectListItems = [];
+	view.projectList = document.createElement("div");
+	navContainer.appendChild(view.projectList);
+	//let projectListItems = [];
 
 	let subviewContainer = document.createElement("div");
 	view.container.appendChild(subviewContainer);
@@ -746,12 +854,15 @@ var ApplicationView = (function(){
 		document.body.appendChild(view.container);
 	};
 
-	view.load = function({ projects }){
+	view.load = function(viewProps){
+		/*
 		projectList.replaceChildren();
-		projects.forEach(project => {
+		viewProps.projects.forEach(project => {
 			projectList.appendChild(loadListItem(project, `project${project.id}`));
 		});
-
+*/
+		this.projectList.replaceChildren();
+		this.projectList.appendChild(viewProps.projectListView.container);
 	};
 
 	view.loadSubview = function(subview){
@@ -772,6 +883,7 @@ var ApplicationView = (function(){
 
 	return view;
 })();
+
 
 var ItemsPresenter = function(items){
 	Object.setPrototypeOf(this, Object.create(SynchronizingPresenter));
