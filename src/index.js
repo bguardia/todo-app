@@ -1038,7 +1038,7 @@ var ProjectView = (function(){
 		this.toggleShowCompletedItemsButton = components.button("Show Completed Items");
 		this.toggleShowCompletedItemsButton.setAttribute("data-state", "show");
 		this.toggleShowCompletedItemsButton.addEventListener("click", function(){
-			toggleShowCompleted(this);
+			projectView.toggleShowCompleted(this);
 		});
 
 		this.newItemButton = components.button("Add Item");
@@ -1047,6 +1047,7 @@ var ProjectView = (function(){
 		}.bind(this));
 		this.container.appendChild(this.projectTitle);
 		this.container.appendChild(this.projectDesc);
+		this.container.appendChild(this.toggleShowCompletedItemsButton);
 		this.container.appendChild(this.itemContainer);
 		this.container.appendChild(this.newItemButton);
 	};
@@ -1055,10 +1056,12 @@ var ProjectView = (function(){
 		let btnState = btn.getAttribute("data-state");
 		if(btnState == "show"){
 			btn.setAttribute("data-state", "hide");
+			btn.innerHTML = "Hide Completed Items";
 		}else{
 			btn.setAttribute("data-state", "show");
+			btn.innerHTML = "Show Completed Items";
 		}
-		callbacks.toggleShowCompleted();
+		projectView.callbacks.toggleShowCompleted();
 	};
 
 	let createItem = function() {
