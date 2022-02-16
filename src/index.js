@@ -399,15 +399,27 @@ var components = {
 
 
 	item: function(iObj) {
-		let container = document.createElement("li");
-		let itemTitleSpan = document.createElement("span");
-		itemTitleSpan.innerHTML = iObj.title;
-		let itemDescSpan = document.createElement("span");
-		let breakEl = document.createElement("br");
-		itemDescSpan.innerHTML = iObj.description;
-		container.appendChild(itemTitleSpan);
-		container.appendChild(breakEl);
-		container.appendChild(itemDescSpan);
+		let container = document.createElement("div");
+		let itemDetailsContainer = document.createElement("div");
+		let itemTitleEl = document.createElement("p");
+		itemTitleEl.innerHTML = iObj.title;
+		
+		let itemDetailsEl = document.createElement("p");
+		let itemDateEl = document.createElement("span");
+		let itemPriorityEl = document.createElement("span");
+		itemDateEl.innerHTML = format(iObj.date, 'MM/dd');
+		itemPriorityEl.innerHTML = "Priority: " + iObj.priority;
+		itemDetailsEl.appendChild(itemDateEl);
+		itemDetailsEl.appendChild(itemPriorityEl);
+
+		itemDetailsContainer.appendChild(itemTitleEl);
+		itemDetailsContainer.appendChild(itemDetailsEl);
+
+		let markCompletedBtn = document.createElement("button");
+
+		container.appendChild(markCompletedBtn);
+		container.appendChild(itemDetailsContainer);
+
 		return container;
 	},
 
@@ -781,6 +793,11 @@ var ApplicationPresenter = (function (){
 	appPresenter.projectView = function(pId){
 		let project = Projects.find(p => p.id === pId);
 		appPresenter.setSubview(new ProjectPresenter(project));
+	};
+
+	appPresenter.itemDetailedView = function(iId){
+		let item = Items.find(i => i.id === iId);
+		appPresenter.setSubview(new ItemDetailedPresenter(item));
 	};
 
 	//projects getter
@@ -1437,7 +1454,15 @@ var ItemPresenter = function(item, opts = {}){
 	this.markComplete = function(){
 		this.itemModel.isComplete = true;
 		this.reload();
-	}
+	};
+
+	this.showDetailedView = function(){
+		ApplicationPresenter.itemDetailedView(this.itemModel.id);
+	};
+
+	this.beforeInitialize = function(){
+		this.view.callbacks.showDetailedView = this.showDetailedView.bind(this);
+	};
 
 	this.viewProps = { title: this.itemModel.title, 
 			   date: format(this.itemModel.date, 'MM/dd'),
@@ -1450,17 +1475,21 @@ var ItemPresenter = function(item, opts = {}){
 	this.setView(new ItemView());
 };
 
+
 var ItemView = function(){
 	this.container = null;
 	this.itemTitle = null;
 	this.itemDate = null;
 	this.itemPriority = null;
 
+	this.callbacks = {};
+
 	this._initialize = function(){
 		this.container = document.createElement("div");
 		this.container.className = "d-flex";
 
 		this.itemTitle = document.createElement("p");
+		this.itemTitle.addEventListener("click", this.callbacks.showDetailedView);
 		this.itemDate = document.createElement("p");
 		this.itemPriority = document.createElement("p");
 
@@ -1497,6 +1526,68 @@ var ItemView = function(){
 }
 
 ItemView.prototype = Object.create(View);
+
+var ItemDetailedPresenter = function(item){
+	Object.setPrototypeOf(this, Object.create(SynchronizingPresenter));
+	this.subscribeToChanged();
+
+	this.item = item;
+	this.viewProps = {};
+	
+	this.editItem = function(){
+		let itemOpts = Object.assign({ id: this.item.id,
+			     		       projectId: this.item.projectId, }, this.item); //id and projectId currently aren't enumerable, plan to change in future
+		let opts = Object.assign({ modal: { title: "Edit Item", 
+				           buttonText: "Update", },
+			   		 }, itemOpts);
+
+		let itemFormModal = new ModalFormPresenter(ItemFormPresenter, opts);
+		itemFormModal.load();
+		itemFormModal.view.render();
+	};
+
+	this.beforeInitialize = function(){
+		this.view.callbacks.editItem = this.editItem.bind(this);
+	};
+
+	this.beforeLoad = function(){
+		this.viewProps = { title: this.item.title, 
+		                   date: format(this.item.date, 'MM/dd'),
+				   priority: this.item.priority, };
+	};
+
+	this.setView(new ItemDetailedView);
+};
+
+var ItemDetailedView = function(){
+	this.callbacks = {};
+
+	this._initialize = function(){
+		this.container = document.createElement("div");
+		this.titleEl = document.createElement("h2");
+		this.detailsContainer = document.createElement("div");
+		this.dateEl = document.createElement("p");
+		this.priorityEl = document.createElement("p");
+
+		this.editItemButton = document.createElement("button");
+		this.editItemButton.innerHTML = "Edit";
+		this.editItemButton.addEventListener("click", this.callbacks.editItem);
+
+		this.detailsContainer.appendChild(this.dateEl);
+		this.detailsContainer.appendChild(this.priorityEl);
+		this.container.appendChild(this.titleEl);
+		this.container.appendChild(this.detailsContainer);
+		this.container.appendChild(this.editItemButton);
+	}
+
+	this.load = function(viewProps){
+		this.titleEl.innerHTML = viewProps.title;
+		this.dateEl.innerHTML = "Date: " + viewProps.date;
+		this.priorityEl.innerHTML = "Priority: " + viewProps.priority;
+	}
+};
+
+ItemDetailedView.prototype = Object.create(View);
 
 var ModalView = function(){
 	this.render = function(){
