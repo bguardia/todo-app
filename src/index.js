@@ -1123,14 +1123,22 @@ var ItemDetailedPresenter = function(item){
 		itemFormModal.view.render();
 	};
 
+	this.newNote = function(){
+		let noteModalForm = new ModalFormPresenter(NoteFormPresenter, { modal: { title: "New Note", }, itemId: this.item.id, });
+		noteModalForm.load();
+		noteModalForm.view.render();
+	}
+
 	this.beforeInitialize = function(){
 		this.view.callbacks.editItem = this.editItem.bind(this);
+		this.view.callbacks.newNote = this.newNote.bind(this);
 	};
 
 	this.beforeLoad = function(){
 		this.viewProps = { title: this.item.title, 
 		                   date: format(this.item.date, 'MM/dd'),
-				   priority: this.item.priority, };
+				   		   priority: this.item.priority, 
+						   notes: this.item.notes, };
 	};
 
 	this.setView(new ItemDetailedView);
@@ -1150,21 +1158,89 @@ var ItemDetailedView = function(){
 		this.editItemButton.innerHTML = "Edit";
 		this.editItemButton.addEventListener("click", this.callbacks.editItem);
 
+		this.addNoteButton = document.createElement("button");
+		this.addNoteButton.innerHTML = "Add Note";
+		this.addNoteButton.addEventListener("click", this.callbacks.newNote);
+
 		this.detailsContainer.appendChild(this.dateEl);
 		this.detailsContainer.appendChild(this.priorityEl);
+
+		this.notesContainer = document.createElement("div");
 		this.container.appendChild(this.titleEl);
 		this.container.appendChild(this.detailsContainer);
 		this.container.appendChild(this.editItemButton);
+		this.container.appendChild(this.notesContainer);
+		this.container.appendChild(this.addNoteButton);
 	}
 
 	this.load = function(viewProps){
 		this.titleEl.innerHTML = viewProps.title;
 		this.dateEl.innerHTML = "Date: " + viewProps.date;
 		this.priorityEl.innerHTML = "Priority: " + viewProps.priority;
+
+		this.notesContainer.replaceChildren();
+		viewProps.notes.forEach(note => {
+			let noteEl = document.createElement("p");
+			noteEl.innerHTML = note.text;
+			this.notesContainer.appendChild(noteEl);
+		});
+		
 	}
 };
 
 ItemDetailedView.prototype = Object.create(View);
+
+var NoteFormPresenter = function(opts = {}){
+	Object.setPrototypeOf(this, Object.create(SynchronizingPresenter));
+
+	this.viewProps = Object.assign({ text: "", }, opts);
+
+	this.createOrUpdateNote = function(){
+		let formData = this.view.getFormData();
+		let note = Notes.find(n => n.id === this.viewProps.id);
+		if(note){
+			note.update(formData);
+		}else{
+			Notes.create(formData);
+		}
+		this.emitChanged();
+	};
+
+	this.onSave = this.createOrUpdateNote.bind(this);
+	this.setView(new NoteFormView());
+}
+
+var NoteFormView = function(){
+	this._initialize = function(){
+		this.container = document.createElement("div");
+		this.textAreaLabel = document.createElement("label");
+		this.textAreaLabel.innerHTML = "Text";
+		this.textAreaLabel.className = "form-label";
+		this.textAreaLabel.setAttribute("for", "note-text-area");
+		this.textArea = document.createElement("textarea");
+		this.textArea.id = "note-text-area";
+		this.textArea.className = "form-control";
+		this.textArea.setAttribute("rows", 3);
+
+		this.hiddenItemIdInput = document.createElement("input");
+		this.hiddenItemIdInput.setAttribute("type", "hidden");
+
+		this.container.appendChild(this.textAreaLabel);
+		this.container.appendChild(this.textArea);
+		this.container.appendChild(this.hiddenItemIdInput);
+	}
+
+	this.load = function(viewProps){
+		this.textArea.innerHTML = viewProps.text;
+		this.hiddenItemIdInput.value = viewProps.itemId;
+	}
+
+	this.getFormData = function(){
+		return { text: this.textArea.value,
+				 itemId: this.hiddenItemIdInput.value, };
+	}
+};
+NoteFormView.prototype = Object.create(View);
 
 var ModalView = function(){
 	this.render = function(){
