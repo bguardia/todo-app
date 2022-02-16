@@ -264,17 +264,25 @@ var components = {
 		return table;
 	},
 
-	createInput: function(args){
+	createInput: function(args){//{ type = text, name, label, [placeholder, min, max] }
 		let input = document.createElement("input");
-		input.type = "text";
+		input.type = args.type || "text";
 		input.name = args.name;
 		input.id = args.name;
 		input.className = "form-control";
-		input.setAttribute("placeholder", args.placeholder);
+
+		if(input.type == "text"){
+			input.setAttribute("placeholder", args.placeholder);
+		}else if(input.type == "number"){
+			args.min && input.setAttribute("min", args.min);
+			args.max && input.setAttribute("max", args.max);
+		}
+
 		let label = document.createElement("label");
 		label.setAttribute("for", args.name);
 		label.innerHTML = args.label;
 		label.className = "col-form-label";
+
 		let fieldContainer = document.createElement("div");
 		fieldContainer.appendChild(label);
 		fieldContainer.appendChild(input);
