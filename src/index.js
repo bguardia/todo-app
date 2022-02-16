@@ -1,9 +1,13 @@
 const datasetModule = require('./dataset.js');
+import View from './view.js';
+import SynchronizingPresenter from './presenter.js';
 import { Modal } from 'bootstrap';
 import { format } from 'date-fns';
 import { isSameDay } from 'date-fns';
 import { endOfDay } from 'date-fns';
 import { startOfDay } from 'date-fns';
+
+
 
 //Check for localStorage
 //code from: https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API/Using_the_Web_Storage_API
@@ -120,36 +124,7 @@ var seedData = function() {
 	itemData.forEach(d => Items.create(d));
 };
 
-//simple event handler
-var EventHandler = (function(){
-	var events = {}; 
-	var createEvent = function(eventName){
-		if(!events[eventName]){
-			events[eventName] = []; //empty Array to be filled be subscribers
-		}
-		return eventName;
-	};
 
-	var unsubscribe = function(eventName, callbackFn){
-		let index = events[eventName].findIndex(fn => fn === callbackFn);
-		if(~index){
-		  events[eventName].splice(index, 1);
-		}
-	};
-
-	var subscribe = function(eventName, callbackFn){
-		events[eventName].push(callbackFn);
-	};
-
-	var publish = function(eventName, emitter){
-		events[eventName].forEach(callback => callback(emitter));
-	};
-	
-	return { createEvent: createEvent,
-		 subscribe: subscribe,
-		 unsubscribe: unsubscribe,
-		 publish: publish };
-})();
 
 //UI components
 var components = {
@@ -519,133 +494,6 @@ var components = {
 	},
 }
 
-var SynchronizingPresenter = {
-	changeEvent: EventHandler.createEvent("changed"), //return event name
-	boundCallback: null, 
-	view: null,
-	viewProps: null, //Object containting properties to pass to view
-	emitChanged: function(){
-		EventHandler.publish(this.changeEvent, this);
-	},
-	subscribeToChanged: function(){
-		this.boundCallback = this.onChanged.bind(this);
-		EventHandler.subscribe(this.changeEvent, this.boundCallback);
-	},
-	unsubscribeToChanged: function(){
-		EventHandler.unsubscribe(this.changeEvent, this.boundCallback);
-		this.boundCallback = null;
-	},
-	_onChanged: function(){
-		this.reload(false); //load without emitting event
-	},
-	onChanged: function(emitter){//callback for changeEvent
-		if(emitter != this){//ignore events emitted by self
-			this._onChanged();
-		}
-	},
-
-	load: function(){
-		this.beforeLoad();
-		this.loadView();
-	},
-
-	unload: function(){
-		this.beforeUnload();
-		this.unsubscribeToChanged();
-		this.view.remove();
-	},
-
-	reload: function(emitEvent = true){//each object should call reload after it updates data
-		this.load();
-		if(emitEvent){
-			this.emitChanged();
-		}
-	},
-
-	loadView: function(){
-		if(!this.view.isInitialized()){
-			this.beforeInitialize();
-			this.view.initialize();
-			this.afterInitialize();
-		}
-		this.beforeViewLoad();
-		this.view.load(this.viewProps);
-	},
-
-	setView: function(view){
-		this.view = view;
-	},
-
-	getView: function(){
-		return this.view;
-	},
-
-	//Hooks
-	beforeLoad: function(){
-		//Before calling loadView
-	},
-
-	beforeInitialize: function(){
-		//Inside loadView, called only before initializing an uninitialized view
-	},
-
-	afterInitialize: function(){
-		//Inside loadView, called after initializing an uninitialized view
-	},
-
-	beforeViewLoad: function(){
-		//Inside loadView, called every time before loading view
-	},
-
-	beforeUnload: function(){
-		//Called before unloading presenter
-	},
-};
-
-//Main View
-//Sample of main functions
-var View = {
-	container: null,
-	_isInitialized: false,
-	_initialize: function(){
-		//Initialize DOM elements here
-	},
-	initialize: function(){
-		this._initialize();
-		this._isInitialized = true;
-	},
-	load: function(){
-		throw "No load method has been defined";
-	},
-	render: function(){
-		document.body.appendChild(this.container);
-	},
-	renderIn: function(parentEl){
-		parentEl.appendChild(this.container);
-	},
-	remove: function(){
-		this.container.remove();
-		this.clear();
-	},
-	_clear: function(){
-		//DOM elements to clear here
-	},
-	clear: function(){
-		this._clear();
-		this.container = null;
-		this._isInitialized = false;
-	},
-	isInitialized: function(){
-		return this._isInitialized;
-	},
-	/* only for main view
-	loadSubview: function(){
-		//display subview
-	},
-	loadModal: function(){
-
-	},*/
-};
 
 var ProjectListPresenter = function(){
 	Object.setPrototypeOf(this, Object.create(SynchronizingPresenter));
