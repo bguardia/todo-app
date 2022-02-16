@@ -105,10 +105,17 @@ Item.prototype = Object.create( datasetModule.datasetItem );
 
 var Items = new datasetModule.Dataset("Items", Item);
 
+var Note = function(args = {}){
+	this.text = args.text;
+}
+Note.prototype = Object.create(datasetModule.datasetItem);
+var Notes = new datasetModule.Dataset("Notes", Note);
+
 //Create associations
 datasetModule.setAssociation(Project, { hasMany: Item });
 datasetModule.setAssociation(Item, { belongsTo: Project });
-
+datasetModule.setAssociation(Item, { hasMany: Note });
+datasetModule.setAssociation(Note, { belongsTo: Item });
 //Seed code
 
 var seedData = function() {
