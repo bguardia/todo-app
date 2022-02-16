@@ -1264,7 +1264,7 @@ ModalView.prototype = Object.create(View);
 
 
 var ModalFormPresenter = function(FormPresenter, opts = {}){
-	Object.setPrototypeOf(this, SynchronizingPresenter);
+	Object.setPrototypeOf(this, Object.create(SynchronizingPresenter));
 	this.viewProps = {};
 
 	this.beforeLoad = function(){
