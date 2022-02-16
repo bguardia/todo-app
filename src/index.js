@@ -790,17 +790,15 @@ var ApplicationPresenter = (function (){
 
 	//User interactions
 	appPresenter.newProject = function(){
-		let pFormPresenter = new ProjectFormPresenter();
-		pFormPresenter.load();
-		let onSave = pFormPresenter.createProject.bind(pFormPresenter);
-		this.view.loadModal(pFormPresenter.getView(), onSave);
+		let pModalPresenter = new ModalFormPresenter(ProjectFormPresenter, { modal: { title: "New Project", }, });
+		pModalPresenter.load();
+		pModalPresenter.view.render();
 	};
 
 	appPresenter.newItem = function(){
-		let iFormPresenter = new ItemFormPresenter();
-		iFormPresenter.load();
-		let onSave = iFormPresenter.createItem.bind(iFormPresenter);
-		this.view.loadModal(iFormPresenter.getView(), onSave);
+		let iModalPresenter = new ModalFormPresenter(ItemFormPresenter, { modal: { title: "New Item", }});
+		iModalPresenter.load();
+		iModalPresenter.view.render();
 	};
 
 	return appPresenter;
@@ -1073,18 +1071,22 @@ var ProjectPresenter = function(pObj){
 
 		this.itemsPresenter.load();
 		this.viewProps.subview = this.itemsPresenter.getView();
+		this.view.callbacks.editProject = this.editProject.bind(this);
 	}
 
-	this.updateProject = function(args){
-		this.projectModel.update(args);
-		this.reload();
+	this.editProject = function(){
+		let projectData = Object.assign({ id: this.projectModel.id, }, this.projectModel);
+		let modalOpts = Object.assign({ modal: { title: "Edit Project", }, }, projectData);
+		let pModalPresenter = new ModalFormPresenter(ProjectFormPresenter, modalOpts); 
+		pModalPresenter.load();
+		pModalPresenter.view.render();
 	};
 
 	this.newItem = function(){
-		let iFormPresenter = new ItemFormPresenter({ projectId: this.projectModel.id });
-		iFormPresenter.load();
-		let onSave = iFormPresenter.createItem.bind(iFormPresenter);
-		this.view.loadModal(iFormPresenter.getView(), onSave);
+		let modalPresenter = new ModalFormPresenter(ItemFormPresenter, { modal: { title: "New Item", }, 
+									         projectId: this.projectModel.id });
+		modalPresenter.load();
+		modalPresenter.view.render();
 	};
 
 	this.afterInitialize = function(){
@@ -1121,7 +1123,8 @@ var DayPresenter = function(date){
 	this.viewProps = { title: this.getTitle(), };
 
 	this.addItem = function(){
-		let modalPresenter = new ModalFormPresenter(ItemFormPresenter, { date: format(this.date, 'yyyy-MM-dd'), });
+		let modalPresenter = new ModalFormPresenter(ItemFormPresenter, { modal: { title: "New Item", }, 
+										 date: this.date, });
 		modalPresenter.load();
 		modalPresenter.view.render();
 	};
@@ -1204,7 +1207,8 @@ var PeriodPresenter = function(startDate, endDate){
 	this.viewProps.title = `${format(this.startDate, 'MM/dd')} to ${format(this.endDate, 'MM/dd')}`;
 
 	this.addItem = function(){
-		let modalPresenter = new ModalFormPresenter(ItemFormPresenter, { date: format(this.startDate, 'yyyy-MM-dd'), });
+		let modalPresenter = new ModalFormPresenter(ItemFormPresenter, { modal: { title: "New Item" },
+										 date: this.startDate, });
 		modalPresenter.load();
 		modalPresenter.view.render();
 	};
@@ -1232,28 +1236,40 @@ var PeriodPresenter = function(startDate, endDate){
 var ItemFormPresenter = function(opts = {}){
 	Object.setPrototypeOf(this, Object.create(SynchronizingPresenter));
 	
-	this.defaultValues = Object.assign({ projectId: "", 
-			       		     date: format(new Date(), 'yyyy-MM-dd'), 
+	this.defaultValues = Object.assign({ id: "",
+					     projectId: "", 
+					     title: "",
+			       		     date: new Date(), 
 	                                     priority: 0, }, opts);
 
+	console.log("ItemFormPresenter", this.defaultValues);
 	this.viewProps = {};
 
-	this.createItem = function(){
+	this.createOrUpdateItem = function(){
 		let args = this.getFormData();
-		Items.create(args);
+		console.log("args are:", args);
+		let item = Items.find(i => i.id == this.defaultValues.id);
+		if(item){
+			console.log("Item exists, calling item.update");
+			item.update(args);
+		}else{
+			console.log("Item does not exist. Creating new item.");
+			Items.create(args);
+		}
 		this.emitChanged();
 	};
 
-	this.onSave = this.createItem.bind(this);
+	this.onSave = this.createOrUpdateItem.bind(this);
 
 	this.beforeInitialize = function(){
-	        this.view.onSave = this.createItem.bind(this);
+	        this.view.onSave = this.createOrUpdateItem.bind(this);
 	};
 
-	this.afterInitialize = function(){
-		this.view.projectIdInput.value = this.defaultValues.projectId;
-		this.view.dateInput.value = this.defaultValues.date;
-		this.view.priorityInput.value = this.defaultValues.priority;
+	this.beforeLoad = function(){
+		this.viewProps = { title: this.defaultValues.title,
+				   date: format(this.defaultValues.date, 'yyyy-MM-dd'),
+				   priority: this.defaultValues.priority,
+				   projectId: this.defaultValues.projectId, };
 	};
 
 	this.getFormData = function(){
@@ -1263,19 +1279,24 @@ var ItemFormPresenter = function(opts = {}){
 	this.setView(new ItemFormView()) //set default view;
 };
 
-var ProjectFormPresenter = function(){
+var ProjectFormPresenter = function(opts = {}){
 	Object.setPrototypeOf(this, Object.create(SynchronizingPresenter));
 	//does not reload so does not need to subscribe to onChanged event	
 
-	this.createProject = function(){
+	this.viewProps = Object.assign({ title: "" }, opts);
+
+	this.createOrUpdateProject = function(){
 		let args = this.getFormData();
-		Projects.create(args);
+		let project = Projects.find(p => p.id === this.viewProps.id);
+		if(project){
+			project.update(args);
+		}else{
+			Projects.create(args);
+		}
 		this.emitChanged();
 	};
 
-	this.beforeInitialize = function(){
-		this.view.onSave = this.createProject.bind(this);
-	};
+	this.onSave = this.createOrUpdateProject.bind(this);
 
 	this.getFormData = function(){
 		return this.view.getFormData();
@@ -1284,16 +1305,14 @@ var ProjectFormPresenter = function(){
 	this.setView(new ProjectFormView()) //set default view;
 };
 
-
 var ProjectView = (function(){
 	let projectView = Object.create(View);
 	projectView.projectTitle = null;
 	projectView.projectDesc = null;
 	projectView.newItemButton = null;
 	projectView.itemContainer = null;
-	projectView.callbacks = { markCompleted: null,
-			  	  toggleShowCompleted: null,
-	                          addItem: null, };
+	projectView.callbacks = { addItem: null,
+				  editProject: null };
 
 	/* Idea for property storage
 	 * 
@@ -1310,6 +1329,10 @@ var ProjectView = (function(){
 		this.projectDesc = document.createElement("p");
 		this.itemContainer = document.createElement("ul");
 
+		this.editProjectButton = document.createElement("button");
+		this.editProjectButton.innerHTML = "Edit Project";
+		this.editProjectButton.addEventListener("click", this.callbacks.editProject);
+
 		this.newItemButton = components.button("Add Item");
 		this.newItemButton.addEventListener("click", function(){
 			this.callbacks.addItem();
@@ -1317,6 +1340,7 @@ var ProjectView = (function(){
 
 		this.container.appendChild(this.projectTitle);
 		this.container.appendChild(this.projectDesc);
+		this.container.appendChild(this.editProjectButton);
 		this.container.appendChild(this.itemContainer);
 		this.container.appendChild(this.newItemButton);
 	};
@@ -1327,8 +1351,7 @@ var ProjectView = (function(){
 		this.projectDesc = null;
 		this.newItemButton = null;
 		this.itemContainer = null;
-		this.callbacks = { markCompleted: null, 
-		              toggleShowCompleted: null, };
+		this.callbacks = {};
 	};
 
 	projectView.load = function(args){//load data form model into DOM
@@ -1339,91 +1362,57 @@ var ProjectView = (function(){
 		this.itemContainer.appendChild(args.subview.container); //ItemsView
 	};
 
-	projectView.loadModal = function(view, onSave){
-		let modalEl = components.modal("Modal", view.container);
-		let saveBtn = modalEl.querySelector("#modal-save-btn");
-		this.modal = new Modal(modalEl);
-		saveBtn.addEventListener("click", function(e){
-			onSave(e)
-			this.modal.hide();
-			modalEl.remove();
-		}.bind(this));
-		this.modal.show();
-	};
 
 	return projectView;
 })();
 
 var ProjectFormView = function(){
 
-	this.container = null;
-	this._isInitialized = false;
-
-	this.initialize = function(){
+	this._initialize = function(){
 		this.container = document.createElement("div");
-		this.titleInputContainer = components.createInput({ label: "New Project", name: "title", placeholder: "Go to the store" });
+		this.titleInputContainer = components.createInput({ label: "Name", name: "title", placeholder: "Go to the store" });
 		this.titleInput = this.titleInputContainer.querySelector("input");
 		this.container.appendChild(this.titleInputContainer);
 		this._isInitialized = true;
 	};
 
-	this.renderIn = function(parentEl){
-		parentEl.appendChild(this.container);
-	};
-
-	this.load = function(){
-
+	this.load = function(viewProps){
+		this.titleInput.value = viewProps.title;
 	};
 
 	this.getFormData = function(){
-		console.log("ProjectFormView.getFormData:");
-		console.log(`titleInput is: ${this.titleInput}`);
-		console.log(`this.titleInput.value = ${this.titleInput.value}`);
 		return { title: this.titleInput.value };
 	};
-
-	this.remove = function(){
-		this.container.remove();
-	};
-
-	this.isInitialized = function(){
-		return this._isInitialized;
-	}
 };
+ProjectFormView.prototype = Object.create(View);
 
 var ItemFormView = function(){
 
-	this.container = null;
-	this._isInitialized = false;
-
-	this.initialize = function(){
+	this._initialize = function(){
 		this.container = document.createElement("div");
 		this.projectIdInput = document.createElement("input");
 		this.projectIdInput.setAttribute("type", "hidden");
 		
-		this.titleInputContainer = components.createInput({ label: "New Task", name: "title", placeholder: "Task name" });
+		this.titleInputContainer = components.createInput({ label: "Name", name: "title", placeholder: "Task name" });
 		this.titleInput = this.titleInputContainer.querySelector("input");
-		
-		this.dateInput = document.createElement("input");
-		this.dateInput.setAttribute("type", "date");
 
-		this.priorityInput = document.createElement("input");
-		this.priorityInput.setAttribute("type", "number");
-		this.priorityInput.setAttribute("min", 0);
-		this.priorityInput.setAttribute("max", 4);
+		this.dateInputContainer = components.createInput({ type: "date", name: "date", label: "Date", })
+		this.dateInput = this.dateInputContainer.querySelector("input");
+
+		this.priorityInputContainer = components.createInput({ type: "number", name: "priority", label: "Priority", min: 0, max: 4, });
+		this.priorityInput = this.priorityInputContainer.querySelector("input");
 
 		this.container.appendChild(this.titleInputContainer);
-		this.container.appendChild(this.dateInput);
-		this.container.appendChild(this.priorityInput);
+		this.container.appendChild(this.dateInputContainer);
+		this.container.appendChild(this.priorityInputContainer);
 		this.container.appendChild(this.projectIdInput);
-		this._isInitialized = true;
 	};
 
-	this.renderIn = function(parentEl){
-		parentEl.appendChild(this.container);
-	};
-
-	this.load = function(){
+	this.load = function(viewProps){
+		this.titleInput.value = viewProps.title;
+		this.dateInput.value = viewProps.date;
+		this.priorityInput.value = viewProps.priority;
+		this.projectIdInput.value = viewProps.projectId;
 	};
 
 	this.getFormData = function(){
@@ -1436,14 +1425,8 @@ var ItemFormView = function(){
 		return formData;
 	};
 
-	this.remove = function(){
-		this.container.remove();
-	};
-
-	this.isInitialized = function(){
-		return this._isInitialized;
-	}
 };
+ItemFormView.prototype = Object.create(View);
 
 
 var ItemPresenter = function(item, opts = {}){
@@ -1524,6 +1507,7 @@ var ModalView = function(){
 	this.load = function(viewProps){
 		this.container = components.modal(viewProps.title, viewProps.subview.container);
 		this.saveBtn = this.container.querySelector("#modal-save-btn");
+		this.saveBtn.innerHTML = viewProps.saveButtonText;
 		this.modal = new Modal(this.container);
 		this.saveBtn.addEventListener("click", function(e){
 			viewProps.onSave(e)
@@ -1542,6 +1526,9 @@ var ModalFormPresenter = function(FormPresenter, opts = {}){
 	this.beforeLoad = function(){
 		let presenter = new FormPresenter(opts);
 		presenter.load();
+	
+		this.viewProps.title = opts.modal && opts.modal.title || "FORM";
+		this.viewProps.saveButtonText = opts.modal && opts.modal.buttonText || "Save";
 		this.viewProps.subview = presenter.getView();
 		this.viewProps.onSave = presenter.onSave.bind(presenter);
 	};
