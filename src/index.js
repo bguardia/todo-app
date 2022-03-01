@@ -9,6 +9,7 @@ import { startOfDay } from 'date-fns';
 import './style.css';
 import './assets/font-awesome/js/all.js';
 
+import { ApplicationView } from './app-view.js';
 
 
 
