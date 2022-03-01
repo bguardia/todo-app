@@ -6,6 +6,9 @@ import { format } from 'date-fns';
 import { isSameDay } from 'date-fns';
 import { endOfDay } from 'date-fns';
 import { startOfDay } from 'date-fns';
+import './style.css';
+import './assets/font-awesome/js/all.js';
+
 
 
 
@@ -221,6 +224,12 @@ var components = {
 		btn.innerHTML = str;
 		return btn;
 	},
+
+	icon: function(className) {
+		let icon = document.createElement("span");
+		icon.className = className;
+		return icon; 
+	}
 }
 
 
@@ -257,6 +266,7 @@ var ProjectListView = function(){
 	this._initialize = function(){
 		this.container = document.createElement("div");
 		this.projectListContainer = document.createElement("ul");
+		this.projectListContainer.className = "projects-list list-group";
 		this.container.appendChild(this.projectListContainer);
 	};
 
@@ -273,10 +283,12 @@ var ProjectListView = function(){
 
 	this.createItemList = function(project){
 		let itemsListContainer = document.createElement("ul");
+		itemsListContainer.className = "items-list";
 		itemsListContainer.id = this.getItemsListId(project.id);
 		project.items.forEach(i => {
 			if(!i.isComplete){
 				let itemListItem = document.createElement("li");
+				itemListItem.className = "items-list__item";
 				itemListItem.innerHTML = i.title;
 				itemsListContainer.appendChild(itemListItem);
 			}
@@ -291,8 +303,11 @@ var ProjectListView = function(){
 			let pObj = viewProps.projects[key]
 			let p = pObj.model;
 			let projectListItem = document.createElement("li");
+			projectListItem.className = "projects-list__project";
 			let projectTitleContainer = document.createElement("div");
-			let projectTitleEl = document.createElement("a");
+			projectTitleContainer.className = "d-flex justify-content-between";
+			let projectTitleEl = document.createElement("button");
+			projectTitleEl.className = "projects-list__project-title";
 			projectTitleEl.innerHTML = p.title;
 			projectTitleEl.addEventListener("click", () => ApplicationPresenter.projectView(p.id));
 
@@ -300,6 +315,7 @@ var ProjectListView = function(){
 			projectTitleContainer.appendChild(projectTitleEl);
 
 			let toggleBtn = document.createElement("button");
+			toggleBtn.className = "projects-list__toggle-btn";
 			toggleBtn.setAttribute("data-target", this.getItemsListId(p.id));
 			toggleBtn.setAttribute("data-project-id", p.id);
 
@@ -316,7 +332,7 @@ var ProjectListView = function(){
 			let itemsListContainer = this.createItemList(p);
 
 			if(pObj.hideItems){
-				itemsListContainer.className = "d-none";
+				itemsListContainer.classList.add("d-none");
 				toggleBtn.innerHTML = "+";
 			}else{
 				toggleBtn.innerHTML = "-";
@@ -335,6 +351,14 @@ var ApplicationPresenter = (function (){
 	let appPresenter = Object.create(SynchronizingPresenter);
 	appPresenter.viewProps = {};
 	appPresenter.projectList = new ProjectListPresenter();
+
+	appPresenter.beforeInitialize = function(){
+		this.view.callbacks.showTodayView = this.todayView.bind(this);
+		this.view.callbacks.showTomorrowView = this.tomorrowView.bind(this);
+		this.view.callbacks.showWeekView = this.weekView.bind(this);
+		this.view.callbacks.newProject = this.newProject.bind(this);
+		this.view.callbacks.newItem = this.newItem.bind(this);
+	}
 
 	appPresenter.beforeLoad = function(){
 		//appPresenter.viewProps.projects = Projects.all();	
@@ -398,69 +422,70 @@ var ApplicationPresenter = (function (){
 	return appPresenter;
 })();
 
-
+/*
 var ApplicationView = (function(){
 	let view = Object.create(View);
 
 	view.container = document.createElement("div");
+	view.container.className = "app-container";
+	let headerContainer = document.createElement("div");
+	headerContainer.className = "header d-flex align-items-center";
+	let logoEl = document.createElement("h1");
+	logoEl.className = "header__logo";
+	logoEl.innerHTML = "TodoApp";
+	headerContainer.appendChild(logoEl);
+	view.container.appendChild(headerContainer);
+
+	let mainContainer = document.createElement("div");
+	mainContainer.className = "main-container row"
+	view.container.appendChild(mainContainer);
 	let navContainer = document.createElement("div");
-	view.container.appendChild(navContainer);
+	navContainer.className = "left-nav col-3 d-flex flex-column";
+	mainContainer.appendChild(navContainer);
 
 	//Controls
+	let buttonsContainer = document.createElement("div");
+	buttonsContainer.className = "left-nav__buttons-container d-flex flex-column";
+
 	let todayButton = document.createElement("button");
 	todayButton.addEventListener("click", ApplicationPresenter.todayView);
-	navContainer.appendChild(todayButton);
 	todayButton.innerHTML = "Today";
 
 	let tomorrowButton = document.createElement("button");
 	tomorrowButton.addEventListener("click", ApplicationPresenter.tomorrowView);
 	tomorrowButton.innerHTML = "Tomorrow";
-	navContainer.appendChild(tomorrowButton);
 
 	let weekButton = document.createElement("button");
 	weekButton.addEventListener("click", ApplicationPresenter.weekView);
 	weekButton.innerHTML = "This Week";
-	navContainer.appendChild(weekButton);
 
 	let newProjectButton = document.createElement("button");
 	newProjectButton.addEventListener("click", ApplicationPresenter.newProject.bind(ApplicationPresenter));
 	newProjectButton.innerHTML = "New Project";
-	navContainer.appendChild(newProjectButton);
 
 	let newItemButton = document.createElement("button");
 	newItemButton.addEventListener("click", ApplicationPresenter.newItem.bind(ApplicationPresenter));
 	newItemButton.innerHTML = "New Item";
-	navContainer.appendChild(newItemButton);
 
+	[todayButton, tomorrowButton, weekButton, newProjectButton, newItemButton].forEach(b => {
+		b.className = "btn";
+		buttonsContainer.appendChild(b); });
+
+	navContainer.appendChild(buttonsContainer);
 	view.projectList = document.createElement("div");
+	view.projectList.className = "left-nav__projects-container flex-fill";
 	navContainer.appendChild(view.projectList);
 	//let projectListItems = [];
 
 	let subviewContainer = document.createElement("div");
-	view.container.appendChild(subviewContainer);
-
-	let loadListItem = function(item, elId = item.id){
-		let listItem = document.createElement("li");
-		listItem.id = elId;
-		let anchor = document.createElement("a");
-		anchor.innerHTML = item.title;
-		anchor.addEventListener("click", () => ApplicationPresenter.projectView(item.id));
-		listItem.appendChild(anchor);
-
-		return listItem;
-	};
+	subviewContainer.className = "container col-9";
+	mainContainer.appendChild(subviewContainer);
 
 	view.render = function(){
 		document.body.appendChild(view.container);
 	};
 
 	view.load = function(viewProps){
-		/*
-		projectList.replaceChildren();
-		viewProps.projects.forEach(project => {
-			projectList.appendChild(loadListItem(project, `project${project.id}`));
-		});
-*/
 		this.projectList.replaceChildren();
 		this.projectList.appendChild(viewProps.projectListView.container);
 	};
@@ -483,7 +508,7 @@ var ApplicationView = (function(){
 
 	return view;
 })();
-
+*/
 
 var ItemsPresenter = function(items){
 	Object.setPrototypeOf(this, Object.create(SynchronizingPresenter));
@@ -555,7 +580,9 @@ var ItemsView = function(){
 
 	this._initialize = function(title){
 		this.container = document.createElement("div");
+		this.controlsContainer = document.createElement("div");
 		this.itemsContainer = document.createElement("ul");
+		this.itemsContainer.className = "item-pills-group";
 		
 		//toggleShowCompletedItemsButton
 		let toggleCallback = this.toggleShowCompleted.bind(this);
@@ -565,7 +592,7 @@ var ItemsView = function(){
 			toggleCallback(this);
 		});
 
-		this.container.appendChild(this.toggleShowCompletedItemsButton);
+		this.controlsContainer.appendChild(this.toggleShowCompletedItemsButton);
 
 		//sortBySelector
 		this.sortBySelector = document.createElement("select");
@@ -596,9 +623,10 @@ var ItemsView = function(){
 				sortOpts[this.name] = this.value;
 				changeSort(sortOpts);
 			});
-			this.container.appendChild(el);
+			this.controlsContainer.appendChild(el);
 		});
 
+		this.container.appendChild(this.controlsContainer);
 		this.container.appendChild(this.itemsContainer);
 
 	};
@@ -919,22 +947,31 @@ var ProjectView = (function(){
 
 	projectView._initialize = function(){//create DOM elements
 		this.container = document.createElement("div");
-		this.projectTitle = document.createElement("p");
+		this.container.className = "col-8";
+		this.titleContainer = document.createElement("div");
+		this.titleContainer.className = "project__title d-flex align-items-center";
+		this.textContainer = document.createElement("div");
+		this.projectTitle = document.createElement("h2");
 		this.projectDesc = document.createElement("p");
-		this.itemContainer = document.createElement("ul");
 
 		this.editProjectButton = document.createElement("button");
 		this.editProjectButton.innerHTML = "Edit Project";
+		this.editProjectButton.className = "project__edit-button btn btn-secondary";
 		this.editProjectButton.addEventListener("click", this.callbacks.editProject);
+
+		this.textContainer.appendChild(this.projectTitle);
+		this.textContainer.appendChild(this.projectDesc);
+		this.titleContainer.appendChild(this.textContainer);
+		this.titleContainer.appendChild(this.editProjectButton);
+
+		this.itemContainer = document.createElement("div");
 
 		this.newItemButton = components.button("Add Item");
 		this.newItemButton.addEventListener("click", function(){
 			this.callbacks.addItem();
 		}.bind(this));
 
-		this.container.appendChild(this.projectTitle);
-		this.container.appendChild(this.projectDesc);
-		this.container.appendChild(this.editProjectButton);
+		this.container.appendChild(this.titleContainer);
 		this.container.appendChild(this.itemContainer);
 		this.container.appendChild(this.newItemButton);
 	};
@@ -1063,21 +1100,42 @@ var ItemView = function(){
 
 	this._initialize = function(){
 		this.container = document.createElement("div");
-		this.container.className = "d-flex";
+		this.container.className = "item-pill d-flex align-items-center";
 
+		this.itemTextContainer = document.createElement("div");
+		this.itemTextContainer.className = "item-pill__text-container d-flex flex-column justify-content-center";
 		this.itemTitle = document.createElement("p");
+		this.itemTitle.className = "item-pill__title fs-4";
 		this.itemTitle.addEventListener("click", this.callbacks.showDetailedView);
-		this.itemDate = document.createElement("p");
-		this.itemPriority = document.createElement("p");
+		this.itemTextContainer.appendChild(this.itemTitle);
 
-		this.container.appendChild(this.itemTitle);
-		this.container.appendChild(this.itemDate);
-		this.container.appendChild(this.itemPriority);
+		this.itemDetailsContainer = document.createElement("div");
+		this.itemDetailsContainer.className = "item-pill__details d-flex justify-content-evenly";
+		this.itemDateContainer = document.createElement("p");
+		this.itemDate = document.createElement("span");
+		this.dateIcon = components.icon("fa-solid fa-clock");
+		this.itemDateContainer.appendChild(this.dateIcon);
+		this.itemDateContainer.appendChild(this.itemDate);
+
+		this.itemDate.className = "item-pill__date";
+		this.itemPriorityContainer = document.createElement("p");
+		this.itemPriority = document.createElement("span");
+		this.priorityIcon = components.icon("fa-solid fa-flag");
+		this.itemPriorityContainer.appendChild(this.priorityIcon);
+		this.itemPriorityContainer.appendChild(this.itemPriority);
+		this.itemPriority.className = "item-pill__priority";
+
+		this.itemDetailsContainer.appendChild(this.itemDateContainer);
+		this.itemDetailsContainer.appendChild(this.itemPriorityContainer);
+		this.itemTextContainer.appendChild(this.itemDetailsContainer);
+
+		this.container.appendChild(this.itemTextContainer);
 	};
 
 	this._markCompleteButton = function(markComplete){
 		let completeBtn = document.createElement("button");
-		completeBtn.innerHTML = "Mark Complete";
+		completeBtn.className = "item-pill__mark-complete-btn btn btn-outline-success rounded-circle flex-grow-0";
+		//completeBtn.innerHTML = "Mark Complete";
 		completeBtn.addEventListener("click", markComplete);
 		return completeBtn; 
 	};
@@ -1091,7 +1149,7 @@ var ItemView = function(){
 			this.completeBtn.remove();
 		} else if(!iObj.isComplete && !this.completeBtn){
 			this.completeBtn = this._markCompleteButton(iObj.markComplete);
-			this.container.appendChild(this.completeBtn);
+			this.container.prepend(this.completeBtn);
 		}
 
 		if(iObj.hide){
