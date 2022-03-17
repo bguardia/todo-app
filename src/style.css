@@ -1,0 +1,112 @@
+html, 
+body,
+.app-container {
+    height: 100%;
+    width: 100%;
+}
+
+.app-container {
+    overflow: hidden;
+}
+
+.header {
+    background: red;
+    color: white;
+    /* box-shadow: 0 2px 5px rgba(0,0,0,0.25); */
+    height: 10%;
+    padding-left: 1em;
+}
+
+.main-container {
+    height: 90%;
+}
+
+.left-nav {
+    height: 100%;
+}
+
+.left-nav__projects-container {
+    background: grey;
+    color: white;
+    overflow: hidden;
+
+}
+
+#subview-container {
+    height: 100%;
+    box-shadow: inset 2px 2px 5px rgba(0,0,0,0.25);
+}
+
+.items-list {
+    list-style-type: none;
+}
+
+.items-list li:before {
+    content: "\02EA";
+}
+
+/* item pills */
+
+.item-pills-group {
+    margin-left: 0;
+    padding-inline-start: 0;
+}
+
+.item-pill {
+    border: solid 1px grey;
+    border-radius: 8px;
+}
+
+.item-pill__mark-complete-btn {
+    aspect-ratio: 1;
+    margin: 0 1em;
+}
+
+.item-pill__text-container {
+    margin: 1em 0;
+}
+.item-pill__title {
+    margin-bottom: 0;
+}
+
+.item-pill__details > * {
+    display: inline-block;
+    margin-bottom: 0;
+    margin-right: 1em;
+}
+
+.item-pill__details .svg-inline--fa {
+    color: grey;
+}
+
+.item-pill__date,
+.item-pill__priority {
+    margin-left: 2px;
+}
+
+/* project list */
+
+.projects-list__project {
+    padding: 0.5em;
+}
+
+.projects-list__project-title,
+.projects-list__toggle-btn {
+    background: inherit;
+    border: none;
+    color: white;
+}
+
+/* ProjectView */
+
+.project__header {
+    position: relative;
+}
+
+.project__controls {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 0;
+    right: 0;
+}
