@@ -10,7 +10,7 @@ import './style.css';
 import './assets/font-awesome/js/all.js';
 
 import { ApplicationView } from './app-view.js';
-
+const { toHTML } = require(`./string-to-html.js`);
 
 
 //Check for localStorage
@@ -167,53 +167,25 @@ var components = {
 	},
 
 	modal: function(title, modalContent){
-		let container = document.createElement("div");
-		container.className = "modal";
-		container.setAttribute("tabindex", "-1");
-		let dialog = document.createElement("div");
-		dialog.className = "modal-dialog";
-		container.appendChild(dialog);
+		let modal = toHTML('<div class="modal" tabindex="-1">' +
+								'<div class="modal-dialog">' +
+									'<div class="modal-content">' +
+										'<div class="modal-header">' +
+											`<h5 class="modal-title">${title}</h5>` +
+										`</div>` +
+										`<div class="modal-body"></div>` + //modalContent goes here
+										`<div class="modal-footer">` +
+											`<button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>` +
+											`<button id="modal-save-btn" class="btn btn-primary" data-bs-dismiss="modal">Create</button>` +
+										`</div>` +
+									`</div>` +
+								`</div>` +
+							`</div>`);
 
-		let content = document.createElement("div");
-		content.className = "modal-content";
-		dialog.appendChild(content);
-		let header = document.createElement("div");
-		header.className = "modal-header";
-		content.appendChild(header);
+		let contentContainer = modal.querySelector('.modal-body');
+		contentContainer.appendChild(modalContent);
 
-		let titleEl = document.createElement("h5");
-		titleEl.className = "modal-title";
-		titleEl.innerHTML = title;
-		header.appendChild(titleEl);
-
-		let closeBtn = document.createElement("button");
-		closeBtn.className = "btn-close";
-		closeBtn.setAttribute("data-bs-dismiss", "modal");
-		closeBtn.setAttribute("aria-label", "Close");
-		header.appendChild(closeBtn);
-
-		let body = document.createElement("div");
-		body.className = "modal-body";
-		body.appendChild(modalContent);
-		content.appendChild(body);
-
-		let footer = document.createElement("div");
-		footer.className = "modal-footer";
-		content.appendChild(footer);
-
-		let footerCloseBtn = document.createElement("button");
-		footerCloseBtn.className = "btn btn-secondary";
-		footerCloseBtn.setAttribute("data-bs-dismiss", "modal");
-		footerCloseBtn.innerHTML = "Close";
-		footer.appendChild(footerCloseBtn);
-
-		let footerSaveBtn = document.createElement("button");
-		footerSaveBtn.className = "btn btn-primary";
-		footerSaveBtn.id = "modal-save-btn";
-		footerSaveBtn.innerHTML = "Create";
-		footer.appendChild(footerSaveBtn);
-		
-		return container;
+		return modal;
 	},
 
 	button: function(str, opts = { className: "btn-primary" }) {
@@ -255,6 +227,7 @@ var ProjectListPresenter = function(){
 
 	this.beforeInitialize = function(){
 		this.view.callbacks.toggleHidden = this.toggleHidden.bind(this);
+		this.view.callbacks.showProject = ApplicationPresenter.projectView;
 	}
 
 	this.setView(new ProjectListView());
@@ -265,10 +238,11 @@ var ProjectListView = function(){
 	this.callbacks = {};
 
 	this._initialize = function(){
-		this.container = document.createElement("div");
-		this.projectListContainer = document.createElement("ul");
-		this.projectListContainer.className = "projects-list list-group";
-		this.container.appendChild(this.projectListContainer);
+		this.container = toHTML(
+				`<ul class="projects-list list-group">` +
+				`</ul>`
+		);
+
 	};
 
 	this.toggleHidden = function(){
@@ -283,14 +257,16 @@ var ProjectListView = function(){
 	};
 
 	this.createItemList = function(project){
-		let itemsListContainer = document.createElement("ul");
-		itemsListContainer.className = "items-list";
-		itemsListContainer.id = this.getItemsListId(project.id);
+		let elId = this.getItemsListId(project.id);
+		let itemsListContainer = toHTML(
+			`<ul class="items-list" id="${elId}"></ul>`
+		);
+
 		project.items.forEach(i => {
 			if(!i.isComplete){
-				let itemListItem = document.createElement("li");
-				itemListItem.className = "items-list__item";
-				itemListItem.innerHTML = i.title;
+				let itemListItem = toHTML(
+					`<li class="items-list__item">${i.title}</li>`
+				);
 				itemsListContainer.appendChild(itemListItem);
 			}
 		});
@@ -299,48 +275,52 @@ var ProjectListView = function(){
 	};
 
 	this.load = function(viewProps){
-		this.projectListContainer.replaceChildren();
+		//this.projectListContainer.replaceChildren();
+		this.container.replaceChildren();
+
 		Object.keys(viewProps.projects).forEach(key => {
-			let pObj = viewProps.projects[key]
-			let p = pObj.model;
-			let projectListItem = document.createElement("li");
-			projectListItem.className = "projects-list__project";
-			let projectTitleContainer = document.createElement("div");
-			projectTitleContainer.className = "d-flex justify-content-between";
-			let projectTitleEl = document.createElement("button");
-			projectTitleEl.className = "projects-list__project-title";
-			projectTitleEl.innerHTML = p.title;
-			projectTitleEl.addEventListener("click", () => ApplicationPresenter.projectView(p.id));
+				let pObj = viewProps.projects[key];
+				
+				let p = pObj.model;
+				let itemsListId = this.getItemsListId(p.id);
+				let projectListItem = toHTML(
+					`<li class="projects-list__project">` + 
+						`<div class="d-flex justify-content-between">` +
+							`<button class="projects-list__project-title" data-project-id="${p.id}">${p.title}</button>` +
+							`<button class="projects-list__toggle-btn" data-target="${itemsListId}" data-project-id="${p.id}">` +
+							`</button>` +
+						`</div>` +
+					`</li>`
+				);
+				
+				let projectListTitle = projectListItem.querySelector(".projects-list__project-title");
+				let showProjectView = this.callbacks.showProject;
+				projectListTitle.addEventListener("click", function(){
+					let pId = this.getAttribute("data-project-id");
+					showProjectView(pId);
+				});
 
-			projectListItem.appendChild(projectTitleContainer);
-			projectTitleContainer.appendChild(projectTitleEl);
+				let toggleBtn = projectListItem.querySelector(".projects-list__toggle-btn");
+				let toggleHidden = this.callbacks.toggleHidden;
+				toggleBtn.addEventListener("click", function(){
+					let targetId = this.getAttribute("data-target");
+					let targetEl = document.querySelector(`#${targetId}`);
+					targetEl.classList.toggle("d-none");
+					this.innerHTML = this.innerHTML == "+" ? "-" : "+";
+					toggleHidden(this.getAttribute("data-project-id"));
+				});
 
-			let toggleBtn = document.createElement("button");
-			toggleBtn.className = "projects-list__toggle-btn";
-			toggleBtn.setAttribute("data-target", this.getItemsListId(p.id));
-			toggleBtn.setAttribute("data-project-id", p.id);
+				let itemsList = this.createItemList(p);
+				projectListItem.appendChild(itemsList);
 
-			let toggleHidden = this.callbacks.toggleHidden;
-			toggleBtn.addEventListener("click", function(){
-				let targetId = this.getAttribute("data-target");
-				let targetEl = document.querySelector(`#${targetId}`);
-				targetEl.classList.toggle("d-none");
-				this.innerHTML = this.innerHTML == "+" ? "-" : "+";
-				toggleHidden(this.getAttribute("data-project-id"));
-			});
-			projectTitleContainer.appendChild(toggleBtn);
+				if(pObj.hideItems){
+					itemsList.classList.add("d-none");
+					toggleBtn.innerHTML = "+";
+				}else{
+					toggleBtn.innerHTML = "-";
+				}
 
-			let itemsListContainer = this.createItemList(p);
-
-			if(pObj.hideItems){
-				itemsListContainer.classList.add("d-none");
-				toggleBtn.innerHTML = "+";
-			}else{
-				toggleBtn.innerHTML = "-";
-			}
-
-			projectListItem.appendChild(itemsListContainer);
-			this.projectListContainer.appendChild(projectListItem);
+				this.container.appendChild(projectListItem);
 		});
 	}
 };
@@ -423,93 +403,6 @@ var ApplicationPresenter = (function (){
 	return appPresenter;
 })();
 
-/*
-var ApplicationView = (function(){
-	let view = Object.create(View);
-
-	view.container = document.createElement("div");
-	view.container.className = "app-container";
-	let headerContainer = document.createElement("div");
-	headerContainer.className = "header d-flex align-items-center";
-	let logoEl = document.createElement("h1");
-	logoEl.className = "header__logo";
-	logoEl.innerHTML = "TodoApp";
-	headerContainer.appendChild(logoEl);
-	view.container.appendChild(headerContainer);
-
-	let mainContainer = document.createElement("div");
-	mainContainer.className = "main-container row"
-	view.container.appendChild(mainContainer);
-	let navContainer = document.createElement("div");
-	navContainer.className = "left-nav col-3 d-flex flex-column";
-	mainContainer.appendChild(navContainer);
-
-	//Controls
-	let buttonsContainer = document.createElement("div");
-	buttonsContainer.className = "left-nav__buttons-container d-flex flex-column";
-
-	let todayButton = document.createElement("button");
-	todayButton.addEventListener("click", ApplicationPresenter.todayView);
-	todayButton.innerHTML = "Today";
-
-	let tomorrowButton = document.createElement("button");
-	tomorrowButton.addEventListener("click", ApplicationPresenter.tomorrowView);
-	tomorrowButton.innerHTML = "Tomorrow";
-
-	let weekButton = document.createElement("button");
-	weekButton.addEventListener("click", ApplicationPresenter.weekView);
-	weekButton.innerHTML = "This Week";
-
-	let newProjectButton = document.createElement("button");
-	newProjectButton.addEventListener("click", ApplicationPresenter.newProject.bind(ApplicationPresenter));
-	newProjectButton.innerHTML = "New Project";
-
-	let newItemButton = document.createElement("button");
-	newItemButton.addEventListener("click", ApplicationPresenter.newItem.bind(ApplicationPresenter));
-	newItemButton.innerHTML = "New Item";
-
-	[todayButton, tomorrowButton, weekButton, newProjectButton, newItemButton].forEach(b => {
-		b.className = "btn";
-		buttonsContainer.appendChild(b); });
-
-	navContainer.appendChild(buttonsContainer);
-	view.projectList = document.createElement("div");
-	view.projectList.className = "left-nav__projects-container flex-fill";
-	navContainer.appendChild(view.projectList);
-	//let projectListItems = [];
-
-	let subviewContainer = document.createElement("div");
-	subviewContainer.className = "container col-9";
-	mainContainer.appendChild(subviewContainer);
-
-	view.render = function(){
-		document.body.appendChild(view.container);
-	};
-
-	view.load = function(viewProps){
-		this.projectList.replaceChildren();
-		this.projectList.appendChild(viewProps.projectListView.container);
-	};
-
-	view.loadSubview = function(subview){
-		subview.renderIn(subviewContainer);
-	};
-
-	view.loadModal = function(view, onSave){
-		let modalEl = components.modal("Modal", view.container);
-		let saveBtn = modalEl.querySelector("#modal-save-btn");
-		this.modal = new Modal(modalEl);
-		saveBtn.addEventListener("click", function(e){
-			onSave(e)
-			this.modal.hide();
-			modalEl.remove();
-		}.bind(this));
-		this.modal.show();
-	}
-
-	return view;
-})();
-*/
 
 var ItemsPresenter = function(items){
 	Object.setPrototypeOf(this, Object.create(SynchronizingPresenter));
@@ -580,56 +473,50 @@ var ItemsView = function(){
 	this.callbacks = {};
 
 	this._initialize = function(title){
-		this.container = document.createElement("div");
-		this.controlsContainer = document.createElement("div");
-		this.itemsContainer = document.createElement("ul");
-		this.itemsContainer.className = "item-pills-group";
-		
-		//toggleShowCompletedItemsButton
+		this.container = toHTML(
+				`<div>` +
+					`<div>` +
+						`<div class="row">` +
+							`<div class="col">` +
+								`<button class="btn btn-primary" id="show-completed-btn" data-state="show">Show Completed Items</button>` +
+							`</div>` +
+							`<div class="col">` +
+								`<label class="form-label" for="sort-by-select">Sort By</label>` +
+								`<select class="form-select" name="sortBy" id="sort-by-select">` +
+									'<option value="date">Date</option>' +
+									'<option value="priority">Priority</option>' +
+								'</select>' +
+							`</div>` +
+							`<div class="col">` +
+								`<label class="form-label" for="sort-order-select">Order</label>` +
+								`<select class="form-select" name="sortOrder" id="sort-order-select">` +
+									`<option value="desc">Descending</option>` +
+									`<option value="asc">Ascending</option>` +
+								`</select>` +
+							`</div>` +
+						`</div>` +
+					`</div>` +
+					`<ul class="item-pills-group" id="items-container"></ul>` +
+				`</div>`);
+
 		let toggleCallback = this.toggleShowCompleted.bind(this);
-		this.toggleShowCompletedItemsButton = components.button("Show Completed Items");
-		this.toggleShowCompletedItemsButton.setAttribute("data-state", "show");
+		this.toggleShowCompletedItemsButton = this.container.querySelector("#show-completed-btn");
 		this.toggleShowCompletedItemsButton.addEventListener("click", function(){
 			toggleCallback(this);
-		});
-
-		this.controlsContainer.appendChild(this.toggleShowCompletedItemsButton);
-
-		//sortBySelector
-		this.sortBySelector = document.createElement("select");
-		this.sortBySelector.name = "sortBy";
-		["date", "priority"].forEach(str => {
-			let option = document.createElement("option");
-			option.value = str;
-			option.innerHTML = str;
-			this.sortBySelector.appendChild(option);
-		});
-		
-
-		//sortOrderSelector
-		this.sortOrderSelector = document.createElement("select");
-		this.sortOrderSelector.name = "sortOrder";
-		[{ innerHTML: "descending", value: "desc"}, 
-		 { innerHTML: "ascending", value: "asc"  }].forEach(obj => {
-			let option = document.createElement("option");
-			option.innerHTML = obj.innerHTML;
-			option.value = obj.value;
-			this.sortOrderSelector.appendChild(option);
-		});
+		})
 
 		let changeSort = this.callbacks.changeSort;
+		this.sortBySelector = this.container.querySelector("#sort-by-select");
+		this.sortOrderSelector = this.container.querySelector("#sort-order-select");
 		[this.sortBySelector, this.sortOrderSelector].forEach(el => {
 			el.addEventListener("change", function(){
 				let sortOpts = {};
 				sortOpts[this.name] = this.value;
 				changeSort(sortOpts);
-			});
-			this.controlsContainer.appendChild(el);
+			})
 		});
 
-		this.container.appendChild(this.controlsContainer);
-		this.container.appendChild(this.itemsContainer);
-
+		this.itemsContainer = this.container.querySelector("#items-container");
 	};
 
 	this.toggleShowCompleted = function(btn){
@@ -695,6 +582,7 @@ var ProjectPresenter = function(pObj){
 		this.itemsPresenter.load();
 		this.viewProps.subview = this.itemsPresenter.getView();
 		this.view.callbacks.editProject = this.editProject.bind(this);
+		this.view.callbacks.addItem = this.newItem.bind(this);
 	}
 
 	this.editProject = function(){
@@ -710,10 +598,6 @@ var ProjectPresenter = function(pObj){
 									         projectId: this.projectModel.id });
 		modalPresenter.load();
 		modalPresenter.view.render();
-	};
-
-	this.afterInitialize = function(){
-		this.view.callbacks.addItem = this.newItem.bind(this);
 	};
 
 	this.setView(ProjectView);
@@ -783,19 +667,17 @@ var TemplateView = function(){
 	this.newItemButton = null;
 	this.callbacks = {};
 
-	this._initialize = function(){//create DOM elements
-		this.container = document.createElement("div");
-		this.titleEl = document.createElement("h2");
-		this.subviewContainer = document.createElement("div");
+	this._initialize = function(){
+		this.container = toHTML(
+			`<div class="col-8">` + 
+				`<h2 class="display-2 template-view__title"></h2>` +
+				`<div class="template-view__subview"></div>` +
+				`<button class="btn btn-primary template-view__item-btn">Add Item</button>` +
+			`</div>`
+		);
 
-		this.newItemButton = components.button("Add Item");
-		this.newItemButton.addEventListener("click", function(){
-			this.callbacks.addItem();
-		}.bind(this));
-
-		this.container.appendChild(this.titleEl);
-		this.container.appendChild(this.subviewContainer);
-		this.container.appendChild(this.newItemButton);
+		let newItemBtn = this.container.querySelector(".template-view__item-btn");
+		newItemBtn.addEventListener("click", this.callbacks.addItem);
 	};
 
 	this._clear = function(){//empty all DOM elements
@@ -807,9 +689,12 @@ var TemplateView = function(){
 	};
 
 	this.load = function(viewProps){
-		this.titleEl.innerHTML = viewProps.title;
-		this.subviewContainer.replaceChildren();
-		this.subviewContainer.appendChild(viewProps.subview.container);
+		let titleEl = this.container.querySelector(".template-view__title");
+		titleEl.innerHTML = viewProps.title;
+
+		let subviewContainer = this.container.querySelector(".template-view__subview");
+		subviewContainer.replaceChildren();
+		subviewContainer.appendChild(viewProps.subview.container);
 	}
 }
 
@@ -930,10 +815,7 @@ var ProjectFormPresenter = function(opts = {}){
 
 var ProjectView = (function(){
 	let projectView = Object.create(View);
-	projectView.projectTitle = null;
-	projectView.projectDesc = null;
-	projectView.newItemButton = null;
-	projectView.itemContainer = null;
+
 	projectView.callbacks = { addItem: null,
 				  editProject: null };
 
@@ -947,51 +829,48 @@ var ProjectView = (function(){
 	*/
 
 	projectView._initialize = function(){//create DOM elements
-		this.container = document.createElement("div");
-		this.container.className = "col-8";
-		this.titleContainer = document.createElement("div");
-		this.titleContainer.className = "project__title d-flex align-items-center";
-		this.textContainer = document.createElement("div");
-		this.projectTitle = document.createElement("h2");
-		this.projectDesc = document.createElement("p");
+		this.container = toHTML(
+			`<div class="col-8">` +
+				`<div class="project__header">` +
+					`<div class="project__text-container">` +
+						`<h2 class="display-2 project__title"></h2>` + 
+						`<p class="project__description"></p>` +
+					`</div>` +
+					`<div class="project__controls">` +
+						`<button class="project__edit-button btn btn-secondary"><i class="fa-solid fa-pencil"></i></button>` +
+						//`<button class="project__delete-button btn btn-danger"><i class="fa-solid fa-xmark"></i></button>` +
+					`</div>` +
+				`</div>` +
+				`<div class="items-container">` +
+				`</div>` +
+				`<button class="new-item-btn btn btn-primary">Add Item</button>` +
+			`</div>`
+		);
 
-		this.editProjectButton = document.createElement("button");
-		this.editProjectButton.innerHTML = "Edit Project";
-		this.editProjectButton.className = "project__edit-button btn btn-secondary";
-		this.editProjectButton.addEventListener("click", this.callbacks.editProject);
+		let editProjectBtn = this.container.querySelector(".project__edit-button");
+		editProjectBtn.addEventListener("click", this.callbacks.editProject);
 
-		this.textContainer.appendChild(this.projectTitle);
-		this.textContainer.appendChild(this.projectDesc);
-		this.titleContainer.appendChild(this.textContainer);
-		this.titleContainer.appendChild(this.editProjectButton);
+		let newItemBtn = this.container.querySelector(".new-item-btn");
+		newItemBtn.addEventListener("click", this.callbacks.addItem);
 
-		this.itemContainer = document.createElement("div");
-
-		this.newItemButton = components.button("Add Item");
-		this.newItemButton.addEventListener("click", function(){
-			this.callbacks.addItem();
-		}.bind(this));
-
-		this.container.appendChild(this.titleContainer);
-		this.container.appendChild(this.itemContainer);
-		this.container.appendChild(this.newItemButton);
 	};
 
 	projectView._clear = function(){//empty all DOM elements
 		console.log("Called projectView._clear");
-		this.projectTitle = null;
-		this.projectDesc = null;
-		this.newItemButton = null;
-		this.itemContainer = null;
 		this.callbacks = {};
 	};
 
 	projectView.load = function(args){//load data form model into DOM
-		this.itemContainer.replaceChildren();
-		this.projectTitle.innerHTML = "Project: " + args.project.title;
-		this.projectDesc.innerHTML = "Description: " + args.project.description;
+		let itemsContainer = this.container.querySelector(".items-container");
+		itemsContainer.replaceChildren();
 
-		this.itemContainer.appendChild(args.subview.container); //ItemsView
+		let projectTitle = this.container.querySelector(".project__title");
+		projectTitle.innerHTML = args.project.title;
+
+		let projectDesc = this.container.querySelector(".project__description");
+		projectDesc.innerHTML = args.project.description;
+
+		itemsContainer.appendChild(args.subview.container); //ItemsView
 	};
 
 
@@ -1021,38 +900,56 @@ ProjectFormView.prototype = Object.create(View);
 var ItemFormView = function(){
 
 	this._initialize = function(){
-		this.container = document.createElement("div");
-		this.projectIdInput = document.createElement("input");
-		this.projectIdInput.setAttribute("type", "hidden");
+
+		this.container = toHTML(
+			`<div>` +
+				`<input type="hidden" name="project-id-input" id="project-id-input">` +
+				`<div class="row">` +
+					`<div class="col">` +
+						`<label class="form-label" for="title-input">Name</label>` +
+						`<input type="text" class="form-control" id="title-input" name="title" placeholder="Task name">` +
+					`</div>` +
+				`</div>` +
+				`<div class="row">` +
+					`<div class="col">` +
+						`<label class="form-label" for="date-input">Date</label>` +
+						`<input type="date" class="form-control" id="date-input" name="title">` +
+					`</div>` +
+					`<div class="col">` +
+						`<label class="form-label" for="priority-input">Priority (0-4)</label>` +
+						`<input type="number" class="form-control" id="priority-input" name="title" min="0" max="4">` +
+					`</div>` +
+				`</div>` +
+			`</div>`
+		);
 		
-		this.titleInputContainer = components.createInput({ label: "Name", name: "title", placeholder: "Task name" });
-		this.titleInput = this.titleInputContainer.querySelector("input");
-
-		this.dateInputContainer = components.createInput({ type: "date", name: "date", label: "Date", })
-		this.dateInput = this.dateInputContainer.querySelector("input");
-
-		this.priorityInputContainer = components.createInput({ type: "number", name: "priority", label: "Priority", min: 0, max: 4, });
-		this.priorityInput = this.priorityInputContainer.querySelector("input");
-
-		this.container.appendChild(this.titleInputContainer);
-		this.container.appendChild(this.dateInputContainer);
-		this.container.appendChild(this.priorityInputContainer);
-		this.container.appendChild(this.projectIdInput);
 	};
 
 	this.load = function(viewProps){
-		this.titleInput.value = viewProps.title;
-		this.dateInput.value = viewProps.date;
-		this.priorityInput.value = viewProps.priority;
-		this.projectIdInput.value = viewProps.projectId;
+		let titleInput = this.container.querySelector("#title-input");
+		titleInput.value = viewProps.title;
+
+		let dateInput = this.container.querySelector("#date-input");
+		dateInput.value = viewProps.date;
+
+		let priorityInput = this.container.querySelector("#priority-input");
+		priorityInput.value = viewProps.priority;
+
+		let projectIdInput = this.container.querySelector("#project-id-input");
+		projectIdInput.value = viewProps.projectId;
 	};
 
 	this.getFormData = function(){
 		console.log("ItemFormView.getFormData:");
-		let formData =  { title: this.titleInput.value,
-		         	  date: new Date(this.dateInput.value),
-		         	  projectId: this.projectIdInput.value,
-				  priority: this.priorityInput.value, };
+		let titleInput = this.container.querySelector("#title-input");
+		let dateInput = this.container.querySelector("#date-input");
+		let priorityInput = this.container.querySelector("#priority-input");
+		let projectIdInput = this.container.querySelector("#project-id-input");
+
+		let formData =  { title: titleInput.value,
+		         	  date: new Date(dateInput.value),
+		         	  projectId: projectIdInput.value,
+				  priority: priorityInput.value, };
 		console.log(formData);
 		return formData;
 	};
@@ -1100,43 +997,35 @@ var ItemView = function(){
 	this.callbacks = {};
 
 	this._initialize = function(){
-		this.container = document.createElement("div");
-		this.container.className = "item-pill d-flex align-items-center";
 
-		this.itemTextContainer = document.createElement("div");
-		this.itemTextContainer.className = "item-pill__text-container d-flex flex-column justify-content-center";
-		this.itemTitle = document.createElement("p");
-		this.itemTitle.className = "item-pill__title fs-4";
+		this.container = toHTML(
+			`<div class="item-pill d-flex align-items-center mt-2 mb-2">` +
+				//`<div class="item-pill__text-container d-flex flex-column justify-content-center">` +
+				`<div class="item-pill__text-container flex-grow-1">` +
+					`<div class="row">` +
+						`<p class="item-pill__title fs-4"></p>` +
+					`</div>` +
+					//`<div class="item-pill__details d-flex justify-content-evenly">` +
+					`<div class="row">` +
+					`<div class="item-pill__details">` +
+						`<p><i class="fa-solid fa-clock"></i><span class="item-pill__date"></span></p>` +
+						`<p><i class="fa-solid fa-flag"></i><span class="item-pill__priority"></span></p>` +
+					`</div>` +
+					`</div>` +
+				`</div>` +
+			`</div>`);
+
+		this.itemTitle = this.container.querySelector(".item-pill__title");
+		this.itemDate = this.container.querySelector(".item-pill__date");
+		this.itemPriority = this.container.querySelector(".item-pill__priority");
+
 		this.itemTitle.addEventListener("click", this.callbacks.showDetailedView);
-		this.itemTextContainer.appendChild(this.itemTitle);
-
-		this.itemDetailsContainer = document.createElement("div");
-		this.itemDetailsContainer.className = "item-pill__details d-flex justify-content-evenly";
-		this.itemDateContainer = document.createElement("p");
-		this.itemDate = document.createElement("span");
-		this.dateIcon = components.icon("fa-solid fa-clock");
-		this.itemDateContainer.appendChild(this.dateIcon);
-		this.itemDateContainer.appendChild(this.itemDate);
-
-		this.itemDate.className = "item-pill__date";
-		this.itemPriorityContainer = document.createElement("p");
-		this.itemPriority = document.createElement("span");
-		this.priorityIcon = components.icon("fa-solid fa-flag");
-		this.itemPriorityContainer.appendChild(this.priorityIcon);
-		this.itemPriorityContainer.appendChild(this.itemPriority);
-		this.itemPriority.className = "item-pill__priority";
-
-		this.itemDetailsContainer.appendChild(this.itemDateContainer);
-		this.itemDetailsContainer.appendChild(this.itemPriorityContainer);
-		this.itemTextContainer.appendChild(this.itemDetailsContainer);
-
-		this.container.appendChild(this.itemTextContainer);
+	
 	};
 
 	this._markCompleteButton = function(markComplete){
 		let completeBtn = document.createElement("button");
 		completeBtn.className = "item-pill__mark-complete-btn btn btn-outline-success rounded-circle flex-grow-0";
-		//completeBtn.innerHTML = "Mark Complete";
 		completeBtn.addEventListener("click", markComplete);
 		return completeBtn; 
 	};
@@ -1146,11 +1035,20 @@ var ItemView = function(){
 		this.itemDate.innerHTML = iObj.date;
 		this.itemPriority.innerHTML = iObj.priority;
 
-		if(iObj.isComplete && this.completeBtn){
-			this.completeBtn.remove();
-		} else if(!iObj.isComplete && !this.completeBtn){
+		
+		if(!this.completeBtn){
 			this.completeBtn = this._markCompleteButton(iObj.markComplete);
 			this.container.prepend(this.completeBtn);
+		}
+
+		if(iObj.isComplete){
+			this.completeBtn.setAttribute("disabled", "");
+			this.completeBtn.classList.remove("btn-outline-success");
+			this.completeBtn.classList.add("btn-success");
+		}else{
+			this.completeBtn.removeAttribute("disabled");
+			this.completeBtn.classList.remove("btn-success");
+			this.completeBtn.classList.add("btn-outline-success");
 		}
 
 		if(iObj.hide){
@@ -1207,29 +1105,29 @@ var ItemDetailedView = function(){
 	this.callbacks = {};
 
 	this._initialize = function(){
-		this.container = document.createElement("div");
-		this.titleEl = document.createElement("h2");
-		this.detailsContainer = document.createElement("div");
-		this.dateEl = document.createElement("p");
-		this.priorityEl = document.createElement("p");
 
-		this.editItemButton = document.createElement("button");
-		this.editItemButton.innerHTML = "Edit";
-		this.editItemButton.addEventListener("click", this.callbacks.editItem);
+		this.container = toHTML(
+			`<div>` +
+				`<h2 id="item-title"></h2>` +
+				`<div id="item-details">` +
+					`<p id="item-details__date"></p>` +
+					`<p id="item-details__priority"></p>` +
+				`</div>` +
+				`<button class="btn btn-secondary" id="item-edit-btn">Edit</button>` +
+				`<div class="item-notes-container"></div>` +
+				`<button class="btn btn-primary" id="item-add-note-btn">Add Note</button>` +
+			`</div>`);
 
-		this.addNoteButton = document.createElement("button");
-		this.addNoteButton.innerHTML = "Add Note";
-		this.addNoteButton.addEventListener("click", this.callbacks.newNote);
+		this.titleEl = this.container.querySelector("#item-title");
+		this.dateEl = this.container.querySelector("#item-details__date");
+		this.priorityEl = this.container.querySelector("#item-details__priority");
+		this.notesContainer = this.container.querySelector(".item-notes-container");
 
-		this.detailsContainer.appendChild(this.dateEl);
-		this.detailsContainer.appendChild(this.priorityEl);
+		this.editItemBtn = this.container.querySelector("#item-edit-btn");
+		this.editItemBtn.addEventListener("click", this.callbacks.editItem);
 
-		this.notesContainer = document.createElement("div");
-		this.container.appendChild(this.titleEl);
-		this.container.appendChild(this.detailsContainer);
-		this.container.appendChild(this.editItemButton);
-		this.container.appendChild(this.notesContainer);
-		this.container.appendChild(this.addNoteButton);
+		this.addNoteBtn = this.container.querySelector("#item-add-note-btn");
+		this.addNoteBtn.addEventListener("click", this.callbacks.newNote);
 	}
 
 	this.load = function(viewProps){
@@ -1271,22 +1169,16 @@ var NoteFormPresenter = function(opts = {}){
 
 var NoteFormView = function(){
 	this._initialize = function(){
-		this.container = document.createElement("div");
-		this.textAreaLabel = document.createElement("label");
-		this.textAreaLabel.innerHTML = "Text";
-		this.textAreaLabel.className = "form-label";
-		this.textAreaLabel.setAttribute("for", "note-text-area");
-		this.textArea = document.createElement("textarea");
-		this.textArea.id = "note-text-area";
-		this.textArea.className = "form-control";
-		this.textArea.setAttribute("rows", 3);
 
-		this.hiddenItemIdInput = document.createElement("input");
-		this.hiddenItemIdInput.setAttribute("type", "hidden");
+		this.container = toHTML(
+			`<div>` +
+				`<label class="form-label" for="note-text-area">Text</label>` +
+				`<textarea id="note-text-area" class="form-control" rows="3"></textarea>` +
+				`<input type="hidden" id="item-id"></input>` +
+			`</div>`);
 
-		this.container.appendChild(this.textAreaLabel);
-		this.container.appendChild(this.textArea);
-		this.container.appendChild(this.hiddenItemIdInput);
+		this.textArea = this.container.querySelector("#note-text-area");
+		this.hiddenItemIdInput = this.container.querySelector("#item-id");
 	}
 
 	this.load = function(viewProps){

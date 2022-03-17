@@ -1,4 +1,5 @@
 import View from './view.js';
+const { toHTML } = require('./string-to-html.js');
 
 export const ApplicationView = (function(){
 	let view = Object.create(View);
@@ -10,61 +11,44 @@ export const ApplicationView = (function(){
                        newItem: null, };
 
     view._initialize = function(){
-        view.container = document.createElement("div");
-        view.container.className = "app-container";
 
-        let headerContainer = document.createElement("div");
-        headerContainer.className = "header d-flex align-items-center";
-        let logoEl = document.createElement("h1");
-        logoEl.className = "header__logo";
-        logoEl.innerHTML = "TodoApp";
-        headerContainer.appendChild(logoEl);
-        view.container.appendChild(headerContainer);
+        view.container = toHTML(
+            `<div class="app-container">` +
+                `<div class="header d-flex align-items-center">` +
+                    `<h1 class="header__logo">TodoApp</h1>` +
+                `</div>` +
+                `<div class="main-container row g-0">` +
+                    `<div class="left-nav col-3 d-flex flex-column">` +
+                        `<div class="left-nav__buttons-container d-flex flex-column">` +
+                            `<button id="nav__today-btn" class="btn">Today</button>` +
+                            `<button id="nav__tomorrow-btn" class="btn">Tomorrow</button>` +
+                            `<button id="nav__week-btn" class="btn">This Week</button>` +
+                            `<button id="nav__new-project-btn" class="btn">New Project</button>` +
+                            `<button id="nav__new-item-btn" class="btn">New Item</button>` +
+                        `</div>` +
+                        `<div class="left-nav__projects-container flex-fill">` + //Projectlist Container
+                        `</div>` +
+                    `</div>` +
+                    `<div id="subview-container" class="container col-9 overflow-auto p-5"></div>` + //Subview Container
+                `</div>` +
+            `</div>`
+        );
 
-        let mainContainer = document.createElement("div");
-        mainContainer.className = "main-container row"
-        view.container.appendChild(mainContainer);
-        let navContainer = document.createElement("div");
-        navContainer.className = "left-nav col-3 d-flex flex-column";
-        mainContainer.appendChild(navContainer);
+        let todayBtn = this.container.querySelector("#nav__today-btn");
+        todayBtn.addEventListener("click", this.callbacks.showTodayView);
 
-        //Controls
-        let buttonsContainer = document.createElement("div");
-        buttonsContainer.className = "left-nav__buttons-container d-flex flex-column";
+        let tomorrowBtn = this.container.querySelector("#nav__tomorrow-btn");
+        tomorrowBtn.addEventListener("click", this.callbacks.showTomorrowView);
 
-        let todayButton = document.createElement("button");
-        todayButton.addEventListener("click", this.callbacks.showTodayView);
-        todayButton.innerHTML = "Today";
+        let weekBtn = this.container.querySelector("#nav__week-btn");
+        weekBtn.addEventListener("click", this.callbacks.showWeekView);
 
-        let tomorrowButton = document.createElement("button");
-        tomorrowButton.addEventListener("click", this.callbacks.showTomorrowView);
-        tomorrowButton.innerHTML = "Tomorrow";
+        let newProjectBtn = this.container.querySelector("#nav__new-project-btn");
+        newProjectBtn.addEventListener("click", this.callbacks.newProject);
 
-        let weekButton = document.createElement("button");
-        weekButton.addEventListener("click", this.callbacks.showWeekView);
-        weekButton.innerHTML = "This Week";
+        let newItemBtn = this.container.querySelector("#nav__new-item-btn");
+        newItemBtn.addEventListener("click", this.callbacks.newItem);
 
-        let newProjectButton = document.createElement("button");
-        newProjectButton.addEventListener("click", this.callbacks.newProject);
-        newProjectButton.innerHTML = "New Project";
-
-        let newItemButton = document.createElement("button");
-        newItemButton.addEventListener("click", this.callbacks.newItem);
-        newItemButton.innerHTML = "New Item";
-
-        [todayButton, tomorrowButton, weekButton, newProjectButton, newItemButton].forEach(b => {
-            b.className = "btn";
-            buttonsContainer.appendChild(b); });
-
-        navContainer.appendChild(buttonsContainer);
-        view.projectList = document.createElement("div");
-        view.projectList.className = "left-nav__projects-container flex-fill";
-        navContainer.appendChild(view.projectList);
-        //let projectListItems = [];
-
-        this.subviewContainer = document.createElement("div");
-        this.subviewContainer.className = "container col-9";
-        mainContainer.appendChild(this.subviewContainer);
     };
 
 	view.render = function(){
@@ -72,12 +56,14 @@ export const ApplicationView = (function(){
 	};
 
 	view.load = function(viewProps){
-		this.projectList.replaceChildren();
-		this.projectList.appendChild(viewProps.projectListView.container);
+        let projectList = this.container.querySelector(".left-nav__projects-container");
+		projectList.replaceChildren();
+		projectList.appendChild(viewProps.projectListView.container);
 	};
 
 	view.loadSubview = function(subview){
-		subview.renderIn(this.subviewContainer);
+        let subviewContainer = this.container.querySelector("#subview-container");
+		subview.renderIn(subviewContainer);
 	};
 
 	view.loadModal = function(view, onSave){
