@@ -57,6 +57,7 @@ const SynchronizingPresenter = {
 	load: function(){
 		this.beforeLoad();
 		this.loadView();
+		this.afterLoad();
 	},
 
 	unload: function(){
@@ -95,6 +96,10 @@ const SynchronizingPresenter = {
 	//Hooks
 	beforeLoad: function(){
 		//Before calling loadView
+	},
+
+	afterLoad: function(){
+		//After calling loadView
 	},
 
 	beforeInitialize: function(){

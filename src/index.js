@@ -217,10 +217,29 @@ var ProjectListPresenter = function(){
 
 	this.beforeLoad = function(){
 		Projects.all().forEach(p => {
-			if(!this.viewProps.projects[p.id]){
+			if(this.viewProps.projects[p.id]){
+				this.viewProps.projects[p.id].checked = true;
+			}else{
 				this.viewProps.projects[p.id] = { model: p,
-								  hideItems: true, };
+								  				  hideItems: true, 
+												  checked: true, };
 			}
+		});
+
+		//Remove any projects that no longer exist in DB
+		Object.keys(this.viewProps.projects).forEach(pId => {
+			let projectData = this.viewProps.projects[pId];
+			if(!projectData.checked){
+				delete this.viewProps.projects[pId];
+			}
+		});
+	};
+
+	this.afterLoad = function(){
+		//Reset projects' checked status so they will be checked again on next load 
+		Object.keys(this.viewProps.projects).forEach(pId => {
+			let projectData = this.viewProps.projects[pId];
+			projectData.checked = false;
 		});
 	}
 
