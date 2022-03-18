@@ -62,7 +62,9 @@ const SynchronizingPresenter = {
 	unload: function(){
 		this.beforeUnload();
 		this.unsubscribeToChanged();
-		this.view.remove();
+		if(this.view.isInitialized()){
+			this.view.remove();
+		}
 	},
 
 	reload: function(emitEvent = true){//each object should call reload after it updates data

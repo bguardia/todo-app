@@ -166,7 +166,10 @@ var components = {
 		return fieldContainer; 
 	},
 
-	modal: function(title, modalContent){
+	modal: function(title, modalContent, optArgs){
+		let procButtonText = optArgs.procButtonText || "Create";
+		let cancelButtonText = optArgs.cancelButtonText || "Close";
+
 		let modal = toHTML('<div class="modal" tabindex="-1">' +
 								'<div class="modal-dialog">' +
 									'<div class="modal-content">' +
@@ -175,8 +178,8 @@ var components = {
 										`</div>` +
 										`<div class="modal-body"></div>` + //modalContent goes here
 										`<div class="modal-footer">` +
-											`<button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>` +
-											`<button id="modal-save-btn" class="btn btn-primary" data-bs-dismiss="modal">Create</button>` +
+											`<button class="btn btn-secondary" data-bs-dismiss="modal">${cancelButtonText}</button>` +
+											`<button id="modal-save-btn" class="btn btn-primary" data-bs-dismiss="modal">${procButtonText}</button>` +
 										`</div>` +
 									`</div>` +
 								`</div>` +
@@ -583,6 +586,7 @@ var ProjectPresenter = function(pObj){
 		this.viewProps.subview = this.itemsPresenter.getView();
 		this.view.callbacks.editProject = this.editProject.bind(this);
 		this.view.callbacks.addItem = this.newItem.bind(this);
+		this.view.callbacks.deleteProject = this.deleteProject.bind(this);
 	}
 
 	this.editProject = function(){
@@ -592,6 +596,24 @@ var ProjectPresenter = function(pObj){
 		pModalPresenter.load();
 		pModalPresenter.view.render();
 	};
+
+	this.deleteProject = function(){
+		let deleteProjFunc = function(){
+				this.projectModel.destroy();
+				this.emitChanged();
+				this.unload();
+		}.bind(this);
+
+		let modalArgs = { title: "Confirm Delete", 
+						  text: "Are you sure you want to delete this project?",
+						  onProceed: deleteProjFunc,
+						  modalOpts: { procButtonText: "Confirm", 
+									   cancelButtonText: "Cancel", }, }
+
+		let confirmModal = new ModalConfirmationPresenter(modalArgs);
+		confirmModal.load();
+		confirmModal.view.render();
+	}
 
 	this.newItem = function(){
 		let modalPresenter = new ModalFormPresenter(ItemFormPresenter, { modal: { title: "New Item", }, 
@@ -838,7 +860,7 @@ var ProjectView = (function(){
 					`</div>` +
 					`<div class="project__controls">` +
 						`<button class="project__edit-button btn btn-secondary"><i class="fa-solid fa-pencil"></i></button>` +
-						//`<button class="project__delete-button btn btn-danger"><i class="fa-solid fa-xmark"></i></button>` +
+						`<button class="project__delete-button btn btn-danger"><i class="fa-solid fa-xmark"></i></button>` +
 					`</div>` +
 				`</div>` +
 				`<div class="items-container">` +
@@ -849,6 +871,9 @@ var ProjectView = (function(){
 
 		let editProjectBtn = this.container.querySelector(".project__edit-button");
 		editProjectBtn.addEventListener("click", this.callbacks.editProject);
+
+		let deleteProjectBtn = this.container.querySelector(".project__delete-button");
+		deleteProjectBtn.addEventListener("click", this.callbacks.deleteProject);
 
 		let newItemBtn = this.container.querySelector(".new-item-btn");
 		newItemBtn.addEventListener("click", this.callbacks.addItem);
@@ -968,12 +993,32 @@ var ItemPresenter = function(item, opts = {}){
 		this.reload();
 	};
 
+	this.deleteItem = function(){
+		let onProceedFunc = function(){
+			this.itemModel.destroy();
+			this.reload();
+		}.bind(this);
+
+		let args = { title: "Confirm Delete",
+					 text: "Are you sure you want to delete this item?",
+					 onProceed: onProceedFunc,
+				     modalOpts: { procButtonText: "Delete",
+					              cancelButtonText: "Cancel", },
+		}
+
+		let confirmDeleteModal = new ModalConfirmationPresenter(args);
+		confirmDeleteModal.load();
+		confirmDeleteModal.view.render();
+	
+	}
+
 	this.showDetailedView = function(){
 		ApplicationPresenter.itemDetailedView(this.itemModel.id);
 	};
 
 	this.beforeInitialize = function(){
 		this.view.callbacks.showDetailedView = this.showDetailedView.bind(this);
+		this.view.callbacks.deleteItem = this.deleteItem.bind(this);
 	};
 
 	this.viewProps = { title: this.itemModel.title, 
@@ -1013,14 +1058,24 @@ var ItemView = function(){
 					`</div>` +
 					`</div>` +
 				`</div>` +
+				`<div class="item-pill__controls">` +
+					`<button class="item-pill__edit">` +
+						`<i class="fa-solid fa-pen"></i>` +
+					`</button>` +
+					`<button class="item-pill__delete">` +
+						`<i class="fa-solid fa-xmark"></i>` +
+					`</button>` +
 			`</div>`);
 
 		this.itemTitle = this.container.querySelector(".item-pill__title");
+		this.itemTitle.addEventListener("click", this.callbacks.showDetailedView);
+
 		this.itemDate = this.container.querySelector(".item-pill__date");
 		this.itemPriority = this.container.querySelector(".item-pill__priority");
 
-		this.itemTitle.addEventListener("click", this.callbacks.showDetailedView);
-	
+		this.itemDeleteBtn = this.container.querySelector(".item-pill__delete");
+		this.itemDeleteBtn.addEventListener("click", this.callbacks.deleteItem);
+
 	};
 
 	this._markCompleteButton = function(markComplete){
@@ -1200,12 +1255,12 @@ var ModalView = function(){
 	};
 
 	this.load = function(viewProps){
-		this.container = components.modal(viewProps.title, viewProps.subview.container);
-		this.saveBtn = this.container.querySelector("#modal-save-btn");
-		this.saveBtn.innerHTML = viewProps.saveButtonText;
+		let modalOpts = viewProps.modalOpts || {};
+		this.container = components.modal(viewProps.title, viewProps.contentEl, modalOpts);
+		this.procBtn = this.container.querySelector("#modal-save-btn");
 		this.modal = new Modal(this.container);
-		this.saveBtn.addEventListener("click", function(e){
-			viewProps.onSave(e)
+		this.procBtn.addEventListener("click", function(e){
+			viewProps.onProceed(e)
 			this.modal.hide();
 			this.remove();
 		}.bind(this));
@@ -1223,13 +1278,30 @@ var ModalFormPresenter = function(FormPresenter, opts = {}){
 		presenter.load();
 	
 		this.viewProps.title = opts.modal && opts.modal.title || "FORM";
-		this.viewProps.saveButtonText = opts.modal && opts.modal.buttonText || "Save";
-		this.viewProps.subview = presenter.getView();
-		this.viewProps.onSave = presenter.onSave.bind(presenter);
+		this.viewProps.procButtonText = opts.modal && opts.modal.buttonText || "Save";
+		this.viewProps.contentEl = presenter.getView().container;
+		this.viewProps.onProceed = presenter.onSave.bind(presenter);
 	};
 
 	this.setView(new ModalView());
 };
+
+var ModalConfirmationPresenter = function(opts){
+	Object.setPrototypeOf(this, Object.create(SynchronizingPresenter));
+
+ 	let contentText = opts.text || "Are you sure you want to proceed?";
+	let defaultContent = toHTML(`<p>${contentText}</p>`);
+
+	this.viewProps = Object.assign({ title: "Confirm",
+									 contentEl: defaultContent,
+									 onProceed: null,
+									 //onCancel: null,
+									 modalOpts: { procButtonText: "Confirm",
+					   				 			  cancelButtonText: "Cancel", },
+					   				}, opts);
+
+	this.setView(new ModalView());
+}
 
 
 var testAppView = function(){
