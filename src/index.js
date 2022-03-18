@@ -344,6 +344,17 @@ var ProjectListView = function(){
 
 				this.container.appendChild(projectListItem);
 		});
+
+		if(Object.keys(viewProps.projects).length <= 0){
+			let itsEmptyNotice = toHTML(
+				`<li class="projects-list__project">` + 
+					`<div class="d-flex justify-content-between">` +
+						`<p>No projects here!</p>` +
+					`</div>` +
+				`</li>`
+			);
+			this.container.appendChild(itsEmptyNotice);
+		}
 	}
 };
 ProjectListView.prototype = Object.create(View);
