@@ -1,3 +1,5 @@
+const { toHTML } = require('../utilities/string-to-html.js');
+
 const View = {
 	container: null,
 	_isInitialized: false,
@@ -41,4 +43,4 @@ const View = {
 	},*/
 };
 
-export default View;
+export { View, toHTML };

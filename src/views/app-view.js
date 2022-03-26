@@ -1,5 +1,7 @@
-import View from './view.js';
-const { toHTML } = require('./string-to-html.js');
+import { View } from './view.js';
+import { Modal } from 'bootstrap';
+import components from '../utilities/components.js';
+const { toHTML } = require('../utilities/string-to-html.js');
 
 export const ApplicationView = (function(){
 	let view = Object.create(View);

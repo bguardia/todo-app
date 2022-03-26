@@ -159,9 +159,9 @@ var setAssociation = function(objConstructor, args){
 var firstLetterToLowercase = function(str) { return str.charAt(0).toLowerCase() + str.substring(1); };
 
 module.exports = { Dataset, 
-		   eachDataset,
-		   datasetItem,
-		   setAssociation };
+		   		   eachDataset,
+		           datasetItem,
+		           setAssociation };
 /*
 export { Dataset, datasetItem };
 */
