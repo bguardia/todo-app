@@ -1,4 +1,5 @@
 import { format } from 'date-fns';
+import ApplicationPresenter from './application-presenter.js';
 import SynchronizingPresenter from './presenter.js';
 import ModalConfirmationPresenter from './modal-confirmation-presenter.js';
 import ItemView from '../views/item-view.js';

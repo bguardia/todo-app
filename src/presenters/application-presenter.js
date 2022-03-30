@@ -9,6 +9,7 @@ import ItemDetailedPresenter from './item-detailed-presenter.js';
 import ModalFormPresenter from './modal-form-presenter.js';
 
 import { Projects } from '../models/project.js';
+import { Items } from '../models/item.js';
 
 const ONE_DAY = 24*60*60*1000;
 const ONE_WEEK = ONE_DAY * 7;
