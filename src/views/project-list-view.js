@@ -29,14 +29,18 @@ var ProjectListView = function(){
 			`<ul class="items-list" id="${elId}"></ul>`
 		);
 
-		project.items.forEach(i => {
-			if(!i.isComplete){
-				let itemListItem = toHTML(
-					`<li class="items-list__item">${i.title}</li>`
-				);
-				itemsListContainer.appendChild(itemListItem);
-			}
-		});
+        if(project.items.length > 0){
+            project.items.forEach(i => {
+                if(!i.isComplete){
+                    let itemListItem = toHTML(
+                        `<li class="items-list__item">${i.title}</li>`
+                    );
+                    itemsListContainer.appendChild(itemListItem);
+                }
+            });
+        }else{
+            itemsListContainer.appendChild(toHTML(`<li class="items-list__item">No items added</li>`))
+        };
 
 		return itemsListContainer;
 	};
