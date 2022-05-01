@@ -5,7 +5,7 @@ import { Note } from './note.js';
 var Item = function(args = {}) {
 	this.title = args.title || "new item";
 	this.description = args.description || "";
-	this.date = args.date || Date.now();
+	this.date = Date.parse(args.date) || Date.now();
 	this.priority = args.priority || 0; //low to high: 0 to 4
 	/*
 	this.isAllDay = false;
