@@ -71,7 +71,7 @@ var ItemDetailedPresenter = function(item){
 
 	this.beforeLoad = function(){
 		let breadcrumbThis = {text: this.item.title};
-		let breadcrumbParent = {href: "#", text: "All Items"};
+		let breadcrumbParent = {text: "Items"};
 		let projectId = null;
 		if(projectId = this.item.projectId){
 			breadcrumbParent = {href: `project${projectId}`, text: this.item.project.title}
