@@ -5,6 +5,7 @@ import ProjectFormPresenter from './project-form-presenter.js';
 import ItemsPresenter from './items-presenter.js';
 import ItemFormPresenter from './item-form-presenter.js';
 import BreadcrumbPresenter from './breadcrumb-presenter.js';
+import ApplicationPresenter from './application-presenter.js';
 
 import ProjectView from '../views/project-view';
 
@@ -49,6 +50,7 @@ var ProjectPresenter = function(pObj){
 				this.projectModel.destroy();
 				this.emitChanged();
 				this.unload();
+				ApplicationPresenter.route("today");
 		}.bind(this);
 
 		let modalArgs = { title: "Confirm Delete", 

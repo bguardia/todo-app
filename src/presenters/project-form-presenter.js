@@ -2,6 +2,7 @@
 import SynchronizingPresenter from './presenter.js';
 
 import ProjectFormView from '../views/project-form-view.js';
+import ApplicationPresenter from './application-presenter.js';
 
 import { Projects } from '../models/project.js';
 
@@ -13,11 +14,12 @@ var ProjectFormPresenter = function(opts = {}){
 
 	this.createOrUpdateProject = function(){
 		let args = this.getFormData();
-		let project = Projects.find(p => p.id === this.viewProps.id);
-		if(project){
-			project.update(args);
+		let existingProject = Projects.find(p => p.id === this.viewProps.id);
+		if(existingProject){
+			existingProject.update(args);
 		}else{
-			Projects.create(args);
+			let newProject = Projects.create(args);
+			ApplicationPresenter.route(`project${newProject.id}`);
 		}
 		this.emitChanged();
 	};
