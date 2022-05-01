@@ -4,6 +4,7 @@ import ModalConfirmationPresenter from './modal-confirmation-presenter.js';
 import ProjectFormPresenter from './project-form-presenter.js';
 import ItemsPresenter from './items-presenter.js';
 import ItemFormPresenter from './item-form-presenter.js';
+import BreadcrumbPresenter from './breadcrumb-presenter.js';
 
 import ProjectView from '../views/project-view';
 
@@ -23,6 +24,12 @@ var ProjectPresenter = function(pObj){
 		this.projectModel.items.forEach(i => { this.items.push(i) });
 
 		this.itemsPresenter.load();
+
+		//breadcrumbs
+		let breadcrumbPresenter = new BreadcrumbPresenter([{text: "Projects"}, {text: this.projectModel.title}]);
+		breadcrumbPresenter.load();
+		this.viewProps.breadcrumbs = breadcrumbPresenter.view.container;
+
 		this.viewProps.subview = this.itemsPresenter.getView();
 		this.view.callbacks.editProject = this.editProject.bind(this);
 		this.view.callbacks.addItem = this.newItem.bind(this);

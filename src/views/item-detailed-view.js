@@ -7,10 +7,12 @@ var ItemDetailedView = function(){
 
 		this.container = toHTML(
 			`<div class="col-8">` +
+				`<div class="breadcrumb-container"></div>` +
+			/*
 				`<nav aria-label="breadcrumb" class="view__breadcrumb">` +
 					`<ol class="breadcrumb">` +
 					`</ol>` +
-				`</nav>` +
+				`</nav>` + */
 				`<div class="project__header">` +
 					`<div class="project__text-container">` +
 						`<h2 id="item-title" class="display-2 project__title"></h2>` + 
@@ -50,7 +52,7 @@ var ItemDetailedView = function(){
 
 		let priorityEl = this.container.querySelector("#item-details__priority");
 		priorityEl.innerHTML = viewProps.priority;
-
+/*
 		let breadcrumbEl = this.container.querySelector(".breadcrumb");
 		let href = "#";
 		let parentText = "All Items";
@@ -64,7 +66,10 @@ var ItemDetailedView = function(){
 			`</li>`));
 		breadcrumbEl.appendChild(toHTML(
 			`<li class="breadcrumb-item">Item</li>`
-		));
+		)); */
+		let breadcrumbContainer = this.container.querySelector(".breadcrumb-container");
+		breadcrumbContainer.replaceChildren();
+		breadcrumbContainer.append(viewProps.breadcrumbs);
 
 		let notesContainer = this.container.querySelector(".item-notes-container");
 		notesContainer.replaceChildren();

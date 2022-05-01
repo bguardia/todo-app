@@ -10,6 +10,7 @@ var TemplateView = function(){
 	this._initialize = function(){
 		this.container = toHTML(
 			`<div class="col-8">` + 
+			`<div class="breadcrumb-container"></div>` +
 				`<h2 class="display-2 template-view__title"></h2>` +
 				`<div class="template-view__subview"></div>` +
 				`<button class="btn btn-primary template-view__item-btn">Add Item</button>` +
@@ -31,6 +32,10 @@ var TemplateView = function(){
 	this.load = function(viewProps){
 		let titleEl = this.container.querySelector(".template-view__title");
 		titleEl.innerHTML = viewProps.title;
+
+		let breadcrumbContainer = this.container.querySelector(".breadcrumb-container");
+		breadcrumbContainer.replaceChildren();
+		breadcrumbContainer.appendChild(viewProps.breadcrumbs);
 
 		let subviewContainer = this.container.querySelector(".template-view__subview");
 		subviewContainer.replaceChildren();

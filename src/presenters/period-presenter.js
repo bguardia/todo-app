@@ -8,6 +8,7 @@ import ItemFormPresenter from './item-form-presenter.js';
 import TemplateView from '../views/template-view.js';
 
 import { Items } from '../models/item.js';
+import BreadcrumbPresenter from './breadcrumb-presenter.js';
 
 var PeriodPresenter = function(startDate, endDate){
 	Object.setPrototypeOf(this, Object.create(SynchronizingPresenter));
@@ -42,6 +43,10 @@ var PeriodPresenter = function(startDate, endDate){
 				this.items.push(i);
 			}
 		});
+
+		let breadcrumbPresenter = new BreadcrumbPresenter([{text: "Views"}, {text: "Week View"}]);
+		breadcrumbPresenter.load();
+		this.viewProps.breadcrumbs = breadcrumbPresenter.view.container;
 
 		this.itemsPresenter.load();
 		this.viewProps.subview = this.itemsPresenter.getView();

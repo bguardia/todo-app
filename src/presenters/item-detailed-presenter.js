@@ -6,6 +6,7 @@ import ItemFormPresenter from './item-form-presenter.js';
 
 import ItemDetailedView from '../views/item-detailed-view.js';
 import ModalConfirmationPresenter from './modal-confirmation-presenter.js';
+import BreadcrumbPresenter from './breadcrumb-presenter.js';
 
 import { Notes } from '../models/note.js';
 
@@ -69,12 +70,22 @@ var ItemDetailedPresenter = function(item){
 	};
 
 	this.beforeLoad = function(){
-		let breadcrumbParent = this.item.projectId ? { href: "#", text: this.item.project.title} : null;
+		let breadcrumbThis = {text: this.item.title};
+		let breadcrumbParent = {href: "#", text: "All Items"};
+		let projectId = null;
+		if(projectId = this.item.projectId){
+			breadcrumbParent = {href: `project${projectId}`, text: this.item.project.title}
+		}
+
+		let breadcrumbPresenter = new BreadcrumbPresenter([breadcrumbParent, breadcrumbThis]);
+		breadcrumbPresenter.load();
+		let breadcrumbView = breadcrumbPresenter.view.container;
+
 		this.viewProps = { title: this.item.title, 
 		                   date: format(this.item.date, 'MM/dd'),
 				   		   priority: this.item.priority, 
 						   notes: this.item.notes, 
-						   breadcrumbParent: breadcrumbParent,
+						   breadcrumbs: breadcrumbView,
 						 };
 	};
 

@@ -8,6 +8,7 @@ import ItemFormPresenter from './item-form-presenter.js';
 import TemplateView from '../views/template-view.js';
 
 import { Items } from '../models/item.js';
+import BreadcrumbPresenter from './breadcrumb-presenter.js';
 
 var DayPresenter = function(date){
 	Object.setPrototypeOf(this, Object.create(SynchronizingPresenter));
@@ -53,6 +54,11 @@ var DayPresenter = function(date){
 				this.items.push(i);
 			}
 		});
+
+		let breadcrumbPresenter = new BreadcrumbPresenter([{text: "Views", }, {text: `${this.getTitle()}`}]);
+		breadcrumbPresenter.load();
+		this.viewProps.breadcrumbs = breadcrumbPresenter.view.container;
+
 		this.itemsPresenter.load();
 		this.viewProps.subview = this.itemsPresenter.getView(); 
 	};

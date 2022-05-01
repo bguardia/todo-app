@@ -10,6 +10,7 @@ var ProjectView = (function(){
 	projectView._initialize = function(){//create DOM elements
 		this.container = toHTML(
 			`<div class="col-8">` +
+				`<div class="breadcrumb-container"></div>` +
 				`<div class="project__header">` +
 					`<div class="project__text-container">` +
 						`<h2 class="display-2 project__title"></h2>` + 
@@ -51,6 +52,10 @@ var ProjectView = (function(){
 
 		let projectDesc = this.container.querySelector(".project__description");
 		projectDesc.innerHTML = args.project.description;
+
+		let breadcrumbContainer = this.container.querySelector(".breadcrumb-container");
+		breadcrumbContainer.replaceChildren();
+		breadcrumbContainer.appendChild(args.breadcrumbs);
 
 		itemsContainer.appendChild(args.subview.container); //ItemsView
 	};

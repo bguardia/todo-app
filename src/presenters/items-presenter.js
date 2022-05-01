@@ -61,6 +61,7 @@ var ItemsPresenter = function(items){
 			let iPresenter = new ItemPresenter(i, { hide });
 			iPresenter.load();
 			return iPresenter.getView(); });
+
 		this.viewProps.itemComponents = itemComponents;
 	};
 
