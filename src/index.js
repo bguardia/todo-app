@@ -104,4 +104,9 @@ var testAppView = function(){
 	ApplicationView.render();
 };
 
+var saveDatasets = function(){
+	toDoApp.save();
+};
+
 window.addEventListener("load", testAppView);
+window.addEventListener("unload", saveDatasets);
