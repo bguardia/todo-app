@@ -8,7 +8,7 @@ var ItemsView = function(){
 		this.container = toHTML(
 				`<div>` +
 					`<div>` +
-						`<div class="row">` +
+						`<div class="row align-items-end">` +
 							`<div class="col">` +
 								`<button class="btn btn-primary" id="show-completed-btn" data-state="show">Show Completed Items</button>` +
 							`</div>` +
@@ -85,7 +85,9 @@ var ItemsView = function(){
 			viewProps.itemComponents.forEach(i => {
 				this.itemsContainer.appendChild(i.container);
 			});
-		}
+		} else {
+            this.itemsContainer.appendChild(toHTML("<p>No items found</p>"))
+        }
 	};
 
 	this.renderIn = function(parentEl){
