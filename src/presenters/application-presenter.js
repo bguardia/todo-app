@@ -88,6 +88,39 @@ var ApplicationPresenter = (function (){
 		iModalPresenter.view.render();
 	};
 
+	//Choose a subview to load based on a string
+	appPresenter.route = function(routeStr){
+		console.log(`ApplicationPresenter.route: routeStr is ${routeStr}`);
+		//2D Array of Route Patterns with their respective destination functions
+		//If a capture group is supplied in the pattern, it will be sent as an argument to the function
+		let appRoutes = [[/project(\d+)/, this.projectView],
+					 	[/item(\d+)/, this.itemDetailedView],
+					 	[/today/, this.todayView],
+					 	[/tomorrow/, this.tomorrowView],
+					 	[/weekView/, this.weekView] ];
+		
+		let foundRouteFunc = null;
+		appRoutes.find(appRoute => {
+			let routePatt = appRoute[0];
+			let routingFunc = appRoute[1];
+			let matchedRoute = null;
+			if((matchedRoute = routePatt.exec(routeStr)) != null){
+				let arg = matchedRoute.length > 1 ? matchedRoute[1] : null;
+				console.log(matchedRoute);
+				console.log(`arg is: ${arg}`);
+				foundRouteFunc = function(){ routingFunc(arg) };
+				return true;
+			}
+			return false;
+		});
+
+		if(foundRouteFunc){
+			foundRouteFunc();
+		}else{
+			console.log("Route not found");
+		}
+	};
+
 	return appPresenter;
 })();
 
