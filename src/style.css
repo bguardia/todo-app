@@ -110,3 +110,16 @@ body,
     top: 0;
     right: 0;
 }
+
+/* Item Detailed View */
+
+.notes-header {
+    margin-top: 20px;
+}
+
+.note {
+    padding: 10px;
+    margin-bottom: 10px;
+    border-bottom: solid 1px black;
+
+}

@@ -5,7 +5,9 @@ import NoteFormPresenter from './note-form-presenter.js';
 import ItemFormPresenter from './item-form-presenter.js';
 
 import ItemDetailedView from '../views/item-detailed-view.js';
+import ModalConfirmationPresenter from './modal-confirmation-presenter.js';
 
+import { Notes } from '../models/note.js';
 
 
 var ItemDetailedPresenter = function(item){
@@ -27,22 +29,53 @@ var ItemDetailedPresenter = function(item){
 		itemFormModal.view.render();
 	};
 
+	this.deleteItem = function(){
+		let deleteItemFunc = function(){
+			this.item.destroy();
+			this.emitChanged();
+			this.unload();
+		}.bind(this);
+
+		let modalArgs = { title: "Confirm Delete", 
+						text: "Are you sure you want to delete this item?",
+						onProceed: deleteItemFunc,
+						modalOpts: { procButtonText: "Confirm", 
+									cancelButtonText: "Cancel", }, }
+
+		let confirmModal = new ModalConfirmationPresenter(modalArgs);
+		confirmModal.load();
+		confirmModal.view.render();
+	};
+
 	this.newNote = function(){
 		let noteModalForm = new ModalFormPresenter(NoteFormPresenter, { modal: { title: "New Note", }, itemId: this.item.id, });
 		noteModalForm.load();
 		noteModalForm.view.render();
+	};
+
+	this.deleteNote = function(noteId){
+		let note = Notes.find(n => n.id == noteId);
+		if(note){
+			note.destroy();
+			this.reload();
+		}
 	}
 
 	this.beforeInitialize = function(){
 		this.view.callbacks.editItem = this.editItem.bind(this);
 		this.view.callbacks.newNote = this.newNote.bind(this);
+		this.view.callbacks.deleteItem = this.deleteItem.bind(this);
+		this.view.callbacks.deleteNote = this.deleteNote.bind(this);
 	};
 
 	this.beforeLoad = function(){
+		let breadcrumbParent = this.item.projectId ? { href: "#", text: this.item.project.title} : null;
 		this.viewProps = { title: this.item.title, 
 		                   date: format(this.item.date, 'MM/dd'),
 				   		   priority: this.item.priority, 
-						   notes: this.item.notes, };
+						   notes: this.item.notes, 
+						   breadcrumbParent: breadcrumbParent,
+						 };
 	};
 
 	this.setView(new ItemDetailedView);
