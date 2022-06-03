@@ -37,7 +37,8 @@ const components = {
 									'<div class="modal-content">' +
 										'<div class="modal-header">' +
 											`<h5 class="modal-title">${title}</h5>` +
-										`</div>` +
+											`<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>` +
+      									`</div>` +
 										`<div class="modal-body"></div>` + //modalContent goes here
 										`<div class="modal-footer">` +
 											`<button class="btn btn-secondary" data-bs-dismiss="modal">${cancelButtonText}</button>` +
@@ -49,6 +50,12 @@ const components = {
 
 		let contentContainer = modal.querySelector('.modal-body');
 		contentContainer.appendChild(modalContent);
+
+		//Option to remove footer
+		let buttonless = optArgs.buttonless;
+		if(buttonless){
+			modal.querySelector(".modal-footer").remove();
+		}
 
 		return modal;
 	},
