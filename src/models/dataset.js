@@ -76,8 +76,10 @@ Dataset.prototype.dump = function(){
 //datasetItem holds properties that Dataset applies
 //and methods connected to Dataset
 var datasetItem = {
-	datasetProperties: { dataset: "", //keeps track of dataset-related properties for setDatasetProperties
-			     id: "", },   //Other properties, such as foreign dataset keys, may be added to declare associations
+	 //datasetProperties keep track of dataset-related properties for setDatasetProperties
+	//Other properties, such as foreign dataset keys, may be added to declare associations
+	datasetProperties: { dataset: "",
+			             id: "",  },   
 					
 	setDatasetProperties: function(args) {
 		Object.keys(this.datasetProperties).forEach(k => {
@@ -104,6 +106,11 @@ var datasetItem = {
 
 	destroy: function(){
 		Datasets[this.dataset].remove(this.id);
+		this.destroyDependents();
+	},
+
+	destroyDependents: function(){
+		//overwritten by setAssociation
 	},
 };
 
@@ -152,6 +159,11 @@ var setAssociation = function(objConstructor, args){
 		obj[`new${args.hasMany.name}`] = function(args){ 
 			args[thisIdKey] = this.id;
 			return owneeTable.create(args); 
+		};
+
+		//overwrite destroyDependents
+		obj['destroyDependents'] = function(){
+			this[`${owneeName}s`].forEach(dependent => dependent.destroy());
 		};
 	}
 };
