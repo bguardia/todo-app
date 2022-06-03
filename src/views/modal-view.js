@@ -11,13 +11,20 @@ var ModalView = function(){
 	this.load = function(viewProps){
 		let modalOpts = viewProps.modalOpts || {};
 		this.container = components.modal(viewProps.title, viewProps.contentEl, modalOpts);
-		this.procBtn = this.container.querySelector("#modal-save-btn");
 		this.modal = new Modal(this.container);
-		this.procBtn.addEventListener("click", function(e){
-			viewProps.onProceed(e)
-			this.modal.hide();
+
+		//Remove modal from DOM tree after it has been hidden
+		this.container.addEventListener("hidden.bs.modal", function(e){
 			this.remove();
-		}.bind(this));
+		});
+
+		if(!modalOpts.buttonless){
+			this.procBtn = this.container.querySelector("#modal-save-btn");
+			this.procBtn.addEventListener("click", function(e){
+				viewProps.onProceed(e)
+				this.modal.hide();
+			}.bind(this));
+		}
 	}
 };
 ModalView.prototype = Object.create(View);
