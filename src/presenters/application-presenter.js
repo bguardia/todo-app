@@ -7,6 +7,7 @@ import ItemFormPresenter from './item-form-presenter.js';
 import PeriodPresenter from './period-presenter.js';
 import ItemDetailedPresenter from './item-detailed-presenter.js';
 import ModalFormPresenter from './modal-form-presenter.js';
+import CalendarPresenter from './calendar-presenter.js';
 
 import { Projects } from '../models/project.js';
 import { Items } from '../models/item.js';
@@ -24,7 +25,7 @@ var ApplicationPresenter = (function (){
 	appPresenter.beforeInitialize = function(){
 		this.view.callbacks.showTodayView = this.todayView.bind(this);
 		this.view.callbacks.showTomorrowView = this.tomorrowView.bind(this);
-		this.view.callbacks.showWeekView = this.weekView.bind(this);
+		this.view.callbacks.showCalendarView = this.calendarView.bind(this);
 		this.view.callbacks.newProject = this.newProject.bind(this);
 		this.view.callbacks.newItem = this.newItem.bind(this);
 	}
@@ -54,10 +55,12 @@ var ApplicationPresenter = (function (){
 		appPresenter.setSubview(tomorrowPresenter);
 	};
 
-	appPresenter.weekView = function(){
+	appPresenter.calendarView = function(){
+		/*
 		let today = new Date();
 		let oneWeekLater = new Date(Date.now() + ONE_WEEK);
-		appPresenter.setSubview(new PeriodPresenter(today, oneWeekLater));
+		appPresenter.setSubview(new PeriodPresenter(today, oneWeekLater)); */
+		appPresenter.setSubview(new CalendarPresenter());
 	};
 
 	appPresenter.projectView = function(pId){

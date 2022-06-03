@@ -24,7 +24,7 @@ export const ApplicationView = (function(){
                         `<div class="left-nav__buttons-container d-flex flex-column">` +
                             `<button id="nav__today-btn" class="btn">Today</button>` +
                             `<button id="nav__tomorrow-btn" class="btn">Tomorrow</button>` +
-                            `<button id="nav__week-btn" class="btn">This Week</button>` +
+                            `<button id="nav__calendar-btn" class="btn">Calendar</button>` +
                             `<button id="nav__new-project-btn" class="btn">New Project</button>` +
                             `<button id="nav__new-item-btn" class="btn">New Item</button>` +
                         `</div>` +
@@ -42,8 +42,8 @@ export const ApplicationView = (function(){
         let tomorrowBtn = this.container.querySelector("#nav__tomorrow-btn");
         tomorrowBtn.addEventListener("click", this.callbacks.showTomorrowView);
 
-        let weekBtn = this.container.querySelector("#nav__week-btn");
-        weekBtn.addEventListener("click", this.callbacks.showWeekView);
+        let calendarBtn = this.container.querySelector("#nav__calendar-btn");
+        calendarBtn.addEventListener("click", this.callbacks.showCalendarView);
 
         let newProjectBtn = this.container.querySelector("#nav__new-project-btn");
         newProjectBtn.addEventListener("click", this.callbacks.newProject);

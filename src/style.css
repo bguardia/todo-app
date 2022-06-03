@@ -123,3 +123,72 @@ body,
     border-bottom: solid 1px black;
 
 }
+
+/* Calendar Styles */
+
+.calendar__header-row {
+    display: flex;
+    justify-content: flex-start;
+    color: red;
+    border: solid 1px grey
+    /* box-shadow: 0 5px 5px 0 rgba(0,0,0,0.25); */
+}
+
+.calendar__header-col {
+    border-right: solid 1px grey;
+    text-align: center;
+}
+
+.calendar__header-col:last-child {
+    border-right: none;
+}
+
+.calendar__row {
+    height: 125px;
+    color: grey;
+    border-bottom: solid 1px grey;
+}
+
+.calendar__col {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    overflow: hidden;
+    border-left: solid 1px grey;
+}
+
+.calendar__col:last-child {
+    border-right: solid 1px grey;
+}
+
+.calendar__cell-header {
+    border-bottom: solid 1px grey;
+    text-align: center;
+}
+
+.calendar__see-more {
+    font-size: 8px;
+}
+
+.calendar__item-container {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 1px;
+}
+
+.calendar__item {
+    width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    margin-bottom: 1px; 
+    text-overflow: ellipsis;
+    border: solid 1px red;
+    border-radius: 3px;
+    background-color: red;
+    color: white;
+    font-size: 10px;
+    padding-left: 1em;
+    cursor: pointer;
+}
