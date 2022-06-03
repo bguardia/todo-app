@@ -2,7 +2,7 @@ import { View, toHTML } from "./view";
 import format from "date-fns/format";
 import ModalPresenter from "../presenters/modal-presenter";
 import ApplicationPresenter from "../presenters/application-presenter";
-import { isSameDay } from "date-fns";
+import { isSameDay, isSameMonth } from "date-fns";
 
 const CalendarView = function(){
 
@@ -218,6 +218,14 @@ const CalendarView = function(){
                     currentCell.appendChild(seeMore);
                 }
             }  
+        }
+
+        //Highlight today if on calendar
+        let today = new Date();
+        let calendarMonth = new Date(year, month, 1);
+        if(isSameMonth(calendarMonth, today)){
+            let todayCell = monthlyCalendar.querySelector(`[dataset-calendar-date="${today.getDate()}"]`);
+            todayCell.classList.add("calendar__col--today");
         }
 
         /*

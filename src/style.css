@@ -158,6 +158,11 @@ body,
     border-left: solid 1px grey;
 }
 
+.calendar__col--today .calendar__cell-header {
+    background-color: red;
+    color: white;
+}
+
 .calendar__col:last-child {
     border-right: solid 1px grey;
 }
