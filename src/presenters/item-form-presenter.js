@@ -8,11 +8,13 @@ import { Items } from '../models/item.js';
 var ItemFormPresenter = function(opts = {}){
 	Object.setPrototypeOf(this, Object.create(SynchronizingPresenter));
 	
-	this.defaultValues = Object.assign({ id: "",
+	this.defaultValues = Object.assign({ 
+						 id: "",
 					     projectId: "", 
 					     title: "",
-			       		     date: new Date(), 
-	                                     priority: 0, }, opts);
+			       		 date: new Date(), 
+	                     priority: 0,
+						 description: "", }, opts);
 
 	console.log("ItemFormPresenter", this.defaultValues);
 	this.viewProps = {};
@@ -39,9 +41,10 @@ var ItemFormPresenter = function(opts = {}){
 
 	this.beforeLoad = function(){
 		this.viewProps = { title: this.defaultValues.title,
-				   date: format(this.defaultValues.date, 'yyyy-MM-dd'),
-				   priority: this.defaultValues.priority,
-				   projectId: this.defaultValues.projectId, };
+						   date: format(this.defaultValues.date, 'yyyy-MM-dd'),
+				   	 	   priority: this.defaultValues.priority,
+				   		   projectId: this.defaultValues.projectId,
+						   description: this.defaultValues.description, };
 	};
 
 	this.getFormData = function(){

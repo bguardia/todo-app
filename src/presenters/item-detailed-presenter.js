@@ -100,7 +100,8 @@ var ItemDetailedPresenter = function(item){
 
 		this.viewProps = { title: this.item.title, 
 		                   date: format(this.item.date, 'MM/dd'),
-				   		   priority: this.item.priority, 
+				   		   priority: this.item.priority,
+						   description: this.item.description,
 						   //notes: this.item.notes, 
 						   subItemsView: this.subItemsPresenter.getView().container,
 						   breadcrumbs: breadcrumbView,

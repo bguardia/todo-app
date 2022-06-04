@@ -167,6 +167,10 @@ body,
     color: white;
 }
 
+.calendar__col--empty {
+    background: #EEE;
+}
+
 .calendar__col:last-child {
     border-right: solid 1px grey;
 }
@@ -200,4 +204,20 @@ body,
     font-size: 10px;
     padding-left: 1em;
     cursor: pointer;
+}
+
+.description-container {
+    margin: 2em 0;
+}
+.model-description {
+    box-shadow: 0 0 5px 1px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    min-height: 3em;
+    padding: 0.75em;
+}
+
+.model-description--empty {
+    color: grey;
+    min-height: 0px;
+    box-shadow: none;
 }

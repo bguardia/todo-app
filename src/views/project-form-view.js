@@ -1,5 +1,10 @@
 import { View, toHTML } from './view.js';
 
+var cleanInput = function(inputStr){
+	let cleanedStr = inputStr.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+	return cleanedStr;
+};
+
 var ProjectFormView = function(){
 
 	this._initialize = function(){
@@ -34,7 +39,7 @@ var ProjectFormView = function(){
 		let titleInput = this.container.querySelector("#title-input");
 		let descriptionInput = this.container.querySelector("#description-input");
 		return { title: titleInput.value,
-		         description: descriptionInput.value, };
+		         description: cleanInput(descriptionInput.value), };
 	};
 };
 ProjectFormView.prototype = Object.create(View);

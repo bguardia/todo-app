@@ -1,4 +1,5 @@
 const { toHTML } = require('../utilities/string-to-html.js');
+const { nl2br } = require('../utilities/nl2br.js');
 
 const View = {
 	container: null,
@@ -43,4 +44,4 @@ const View = {
 	},*/
 };
 
-export { View, toHTML };
+export { View, toHTML, nl2br };

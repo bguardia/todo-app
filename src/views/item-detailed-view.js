@@ -1,4 +1,4 @@
-import { View, toHTML } from './view.js';
+import { View, toHTML, nl2br } from './view.js';
 
 var ItemDetailedView = function(){
 	this.callbacks = {};
@@ -21,6 +21,10 @@ var ItemDetailedView = function(){
 							`<p><i class="fa-solid fa-flag"></i><span id="item-details__priority" class="item-pill__priority"></span></p>` +
 						`</div>` +
 					`</div>` +
+					`<div class="description-container">` +
+						`<p class="description-container__header h4">Description</p>` +
+						`<p class="model-description"></p>` +
+					`</div>` +
 					`<div class="project__controls">` +
 						`<button id="item-edit-btn" class="project__edit-button btn btn-secondary"><i class="fa-solid fa-pencil"></i></button>` +
 						`<button class="project__delete-button btn btn-danger"><i class="fa-solid fa-xmark"></i></button>` +
@@ -29,7 +33,7 @@ var ItemDetailedView = function(){
 				//`<h3 class="notes-header">Notes</h3>` +
 				//`<div class="items-container item-notes-container">` +
 				//`</div>` +
-				`<h3 class="notes-header">SubItems</h3>` +
+				`<p class="notes-header h4">SubItems</p>` +
 				`<div class="items-container">` +
 				`</div>` +
 				//`<button class="btn btn-primary" id="item-add-note-btn">Add Note</button>` +
@@ -61,6 +65,15 @@ var ItemDetailedView = function(){
 
 		let priorityEl = this.container.querySelector("#item-details__priority");
 		priorityEl.innerHTML = viewProps.priority;
+
+		let descriptionEl = this.container.querySelector(".model-description");
+		if(viewProps.description != ""){
+			descriptionEl.innerHTML = nl2br(viewProps.description);
+		}else{
+			descriptionEl.innerHTML = "Edit item to enter a description";
+			descriptionEl.classList.add("model-description--empty");
+		}
+		
 /*
 		let breadcrumbEl = this.container.querySelector(".breadcrumb");
 		let href = "#";
