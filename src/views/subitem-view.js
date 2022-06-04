@@ -24,9 +24,9 @@ var SubItemView = function(){
 					`</div>` +
 				`</div>` +
 				`<div class="item-pill__controls d-flex flex-column p-2">` +
-					`<button class="btn btn-outline-secondary btn-sm item-pill__edit">` +
+				/*	`<button class="btn btn-outline-secondary btn-sm item-pill__edit">` +
 						`<i class="fa-solid fa-pen"></i>` +
-					`</button>` +
+					`</button>` + */
 					`<button class="btn btn-outline-danger btn-sm item-pill__delete">` +
 						`<i class="fa-solid fa-xmark"></i>` +
 					`</button>` +
