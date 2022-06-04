@@ -86,7 +86,7 @@ var ItemsView = function(){
 				this.itemsContainer.appendChild(i.container);
 			});
 		} else {
-            this.itemsContainer.appendChild(toHTML("<p>No items found</p>"))
+            this.itemsContainer.appendChild(toHTML(`<p class="empty-container-placeholder">No items found</p>`))
         }
 	};
 
