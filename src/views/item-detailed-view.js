@@ -26,18 +26,27 @@ var ItemDetailedView = function(){
 						`<button class="project__delete-button btn btn-danger"><i class="fa-solid fa-xmark"></i></button>` +
 					`</div>` +
 				`</div>` +
-				`<h3 class="notes-header">Notes</h3>` +
-				`<div class="items-container item-notes-container">` +
+				//`<h3 class="notes-header">Notes</h3>` +
+				//`<div class="items-container item-notes-container">` +
+				//`</div>` +
+				`<h3 class="notes-header">SubItems</h3>` +
+				`<div class="items-container">` +
 				`</div>` +
-				`<button class="btn btn-primary" id="item-add-note-btn">Add Note</button>` +
+				//`<button class="btn btn-primary" id="item-add-note-btn">Add Note</button>` +
+				`<button class="btn btn-primary" id="item-add-subitem-btn">Add SubItem</button>` +
 			`</div>`
 		);
 
 		let editItemBtn = this.container.querySelector("#item-edit-btn");
 		editItemBtn.addEventListener("click", this.callbacks.editItem);
 
+		/*
 		let addNoteBtn = this.container.querySelector("#item-add-note-btn");
 		addNoteBtn.addEventListener("click", this.callbacks.newNote);
+		*/
+
+		let addSubItemBtn = this.container.querySelector("#item-add-subitem-btn");
+		addSubItemBtn.addEventListener("click", this.callbacks.newSubItem);
 
 		let deleteItemBtn = this.container.querySelector(".project__delete-button");
 		deleteItemBtn.addEventListener("click", this.callbacks.deleteItem);
@@ -71,6 +80,7 @@ var ItemDetailedView = function(){
 		breadcrumbContainer.replaceChildren();
 		breadcrumbContainer.append(viewProps.breadcrumbs);
 
+		/* NOTES CONTAINER
 		let notesContainer = this.container.querySelector(".item-notes-container");
 		notesContainer.replaceChildren();
 		viewProps.notes.forEach(note => {
@@ -89,7 +99,11 @@ var ItemDetailedView = function(){
 
 			notesContainer.appendChild(noteEl);
 		});
-		
+		*/
+
+		let itemsContainer = this.container.querySelector(".items-container");
+		itemsContainer.replaceChildren();
+		itemsContainer.appendChild(viewProps.subItemsView);
 	}
 };
 

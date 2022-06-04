@@ -9,6 +9,8 @@ import ModalConfirmationPresenter from './modal-confirmation-presenter.js';
 import BreadcrumbPresenter from './breadcrumb-presenter.js';
 
 import { Notes } from '../models/note.js';
+import SubItemsPresenter from './subitems-presenter.js';
+import SubItemFormPresenter from './subitem-form-presenter.js';
 
 
 var ItemDetailedPresenter = function(item){
@@ -16,6 +18,8 @@ var ItemDetailedPresenter = function(item){
 	this.subscribeToChanged();
 
 	this.item = item;
+	this.subItems = [];
+	this.subItemsPresenter = new SubItemsPresenter(this.subItems);
 	this.viewProps = {};
 	
 	this.editItem = function(){
@@ -54,6 +58,12 @@ var ItemDetailedPresenter = function(item){
 		noteModalForm.view.render();
 	};
 
+	this.newSubItem = function(){
+		let subItemModalForm = new ModalFormPresenter(SubItemFormPresenter, { modal: { title: "New SubItem", }, itemId: this.item.id, });
+		subItemModalForm.load();
+		subItemModalForm.view.render();
+	};
+
 	this.deleteNote = function(noteId){
 		let note = Notes.find(n => n.id == noteId);
 		if(note){
@@ -67,6 +77,8 @@ var ItemDetailedPresenter = function(item){
 		this.view.callbacks.newNote = this.newNote.bind(this);
 		this.view.callbacks.deleteItem = this.deleteItem.bind(this);
 		this.view.callbacks.deleteNote = this.deleteNote.bind(this);
+
+		this.view.callbacks.newSubItem = this.newSubItem.bind(this);
 	};
 
 	this.beforeLoad = function(){
@@ -81,10 +93,16 @@ var ItemDetailedPresenter = function(item){
 		breadcrumbPresenter.load();
 		let breadcrumbView = breadcrumbPresenter.view.container;
 
+		this.subItems.splice(0, this.subItems.length);
+		this.item.subItems.forEach(i => this.subItems.push(i));
+		console.log(`subItems are: ${this.subItems}`);
+		this.subItemsPresenter.load();
+
 		this.viewProps = { title: this.item.title, 
 		                   date: format(this.item.date, 'MM/dd'),
 				   		   priority: this.item.priority, 
-						   notes: this.item.notes, 
+						   //notes: this.item.notes, 
+						   subItemsView: this.subItemsPresenter.getView().container,
 						   breadcrumbs: breadcrumbView,
 						 };
 	};

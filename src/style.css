@@ -84,6 +84,10 @@ body,
     margin-left: 2px;
 }
 
+.empty-container-placeholder {
+    margin: 2em;
+    color: grey;
+}
 /* project list */
 
 .projects-list__project {
