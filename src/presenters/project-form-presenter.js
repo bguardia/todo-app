@@ -10,10 +10,13 @@ var ProjectFormPresenter = function(opts = {}){
 	Object.setPrototypeOf(this, Object.create(SynchronizingPresenter));
 	//does not reload so does not need to subscribe to onChanged event	
 
-	this.viewProps = Object.assign({ title: "" }, opts);
+	this.viewProps = Object.assign({ title: "",
+                                     description: "", }, opts);
 
 	this.createOrUpdateProject = function(){
 		let args = this.getFormData();
+		console.log(`formData is:`);
+		console.log(args);
 		let existingProject = Projects.find(p => p.id === this.viewProps.id);
 		if(existingProject){
 			existingProject.update(args);

@@ -1,22 +1,40 @@
 import { View, toHTML } from './view.js';
-import components from '../utilities/components.js';
 
 var ProjectFormView = function(){
 
 	this._initialize = function(){
-		this.container = document.createElement("div");
-		this.titleInputContainer = components.createInput({ label: "Name", name: "title", placeholder: "Go to the store" });
-		this.titleInput = this.titleInputContainer.querySelector("input");
-		this.container.appendChild(this.titleInputContainer);
-		this._isInitialized = true;
+
+		this.container = toHTML(
+			`<div>` +
+				`<div class="row">` +
+					`<div class="col">` +
+						`<label class="form-label" for="title-input">Name</label>` +
+						`<input type="text" class="form-control" id="title-input" name="title" placeholder="A name for your project (around the house, work, etc.)">` +
+					`</div>` +
+				`</div>` +
+				`<div class="row">` +
+					`<div class="col">` +
+						`<label class="form-label" for="description-input">Description</label>` +
+						`<textarea class="form-control" id="description-input" name="description" rows="3" placeholder="A description of your project"></textarea>` +
+					`</div>` +
+				`</div>` +
+			`</div>`
+		);
 	};
 
 	this.load = function(viewProps){
-		this.titleInput.value = viewProps.title;
+		let titleInput = this.container.querySelector("#title-input");
+		titleInput.value = viewProps.title;
+
+		let descriptionInput = this.container.querySelector("#description-input");
+		descriptionInput.innerHTML = viewProps.description;
 	};
 
 	this.getFormData = function(){
-		return { title: this.titleInput.value };
+		let titleInput = this.container.querySelector("#title-input");
+		let descriptionInput = this.container.querySelector("#description-input");
+		return { title: titleInput.value,
+		         description: descriptionInput.value, };
 	};
 };
 ProjectFormView.prototype = Object.create(View);
