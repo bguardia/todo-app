@@ -2,6 +2,7 @@ const datasetModule = require('./models/dataset.js');
 import { Project } from './models/project.js';
 import { Item } from './models/item.js';
 import { Note } from './models/note.js';
+import { SubItem } from './models/subitem.js';
 
 import ApplicationPresenter from './presenters/application-presenter.js';
 import { ApplicationView } from './views/app-view.js';
@@ -80,6 +81,8 @@ datasetModule.setAssociation(Project, { hasMany: Item });
 datasetModule.setAssociation(Item, { belongsTo: Project });
 datasetModule.setAssociation(Item, { hasMany: Note });
 datasetModule.setAssociation(Note, { belongsTo: Item });
+datasetModule.setAssociation(Item, { hasMany: SubItem});
+datasetModule.setAssociation(SubItem, { belongsTo: Item });
 
 //Seed code
 
