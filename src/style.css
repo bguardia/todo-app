@@ -226,3 +226,14 @@ body,
     background: red;
     color: white;
 }
+
+.pop-up__description-text {
+    min-height: 3em;
+    box-shadow: 0 0 5px 1px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    padding: 0.5em;
+    
+    max-height: 200px;
+    white-space: nowrap;
+    overflow-y: scroll;
+}

@@ -1,4 +1,4 @@
-import { View, toHTML } from "./view";
+import { View, toHTML, nl2br } from "./view";
 import format from "date-fns/format";
 import ModalPresenter from "../presenters/modal-presenter";
 import ApplicationPresenter from "../presenters/application-presenter";
@@ -138,10 +138,21 @@ const CalendarView = function(){
     this.renderCalendarItemPopUp = function(item){
         let projectTitle = item.projectId ? item.project.title : "none";
         let formattedDateString = format(item.date, "EEEE, MMMM io, yyyy"); //Day, Month Ordinal, Year
+        let description = nl2br(item.description);
         let itemPopupContent = toHTML(
                 `<div class="item-details--pop-up">` +
-                    `<div class="pop-up__project">Project: ${projectTitle}</div>` +
-                    `<div class="pop-up__date">Date: ${formattedDateString}</div>` +
+                    `<div class="pop-up__project">` +
+                        `<p class="fs-5">Project</p>` +
+                        `<p>${projectTitle}</p>` +
+                    `</div>` +
+                    `<div class="pop-up__date">` + 
+                        `<p class="fs-5">Date</p>` +
+                        `<p>${formattedDateString}</p>` +
+                    `</div>` +
+                    `<div class="pop-up__description">` +
+                        `<p class="fs-5">Description</p>` +
+                        `<p class="pop-up__description-text">${description}</p>` +
+                    `</div>` +
                 `</div>`
             );
 
