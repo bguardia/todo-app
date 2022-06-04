@@ -159,7 +159,7 @@ const CalendarView = function(){
         itemPopupPresenter.view.render();
     }
 
-    this.createCellSeeMore = function(day, items){
+    this.createCellSeeMore = function(title, items){
         let remainingItems = items.length - MAX_ITEMS_PER_CELL;
         let seeMoreButton = toHTML(`<button class="calendar__see-more btn">See ${remainingItems} More</button>`);
         
@@ -174,7 +174,7 @@ const CalendarView = function(){
             });
 
             let args = { modal: {
-                title: day,
+                title: title,
                 contentEl: seeMoreModalContent,
                 buttonless: true,
             }};
@@ -214,7 +214,8 @@ const CalendarView = function(){
                     currentCell.appendChild(itemEl);
                 }
                 if(items.length > MAX_ITEMS_PER_CELL){
-                    let seeMore = this.createCellSeeMore(currentDay, items);
+                    let seeMoreTitle = format(new Date(year, month, currentDay), "EEEE, MMMM do, Y");
+                    let seeMore = this.createCellSeeMore(seeMoreTitle, items);
                     currentCell.appendChild(seeMore);
                 }
             }  
