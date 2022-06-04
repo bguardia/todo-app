@@ -221,3 +221,8 @@ body,
     min-height: 0px;
     box-shadow: none;
 }
+
+.modal-header--todo-app {
+    background: red;
+    color: white;
+}
