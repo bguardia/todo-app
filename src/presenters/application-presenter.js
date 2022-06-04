@@ -8,6 +8,7 @@ import PeriodPresenter from './period-presenter.js';
 import ItemDetailedPresenter from './item-detailed-presenter.js';
 import ModalFormPresenter from './modal-form-presenter.js';
 import CalendarPresenter from './calendar-presenter.js';
+import ModalConfirmationPresenter from './modal-confirmation-presenter.js';
 
 import { Projects } from '../models/project.js';
 import { Items } from '../models/item.js';
@@ -28,6 +29,7 @@ var ApplicationPresenter = (function (){
 		this.view.callbacks.showCalendarView = this.calendarView.bind(this);
 		this.view.callbacks.newProject = this.newProject.bind(this);
 		this.view.callbacks.newItem = this.newItem.bind(this);
+		this.view.callbacks.clearLocalStorage = this.clearLocalStorage.bind(this);
 	}
 
 	appPresenter.beforeLoad = function(){
@@ -122,6 +124,30 @@ var ApplicationPresenter = (function (){
 		}else{
 			console.log("Route not found");
 		}
+	};
+
+	appPresenter._clearLocalStorage = function(){
+		//is set by app's loading function in index.js
+	};
+
+	appPresenter.clearLocalStorage = function(){
+		console.log("ApplicationPresenter.clearLocalStorage");
+
+		let clearStorageFunc = function(){
+			this._clearLocalStorage();
+			this.reload();
+			this.todayView();
+		}.bind(this);
+
+		let modalArgs = { title: "Confirm Delete", 
+						  text: "Are you sure you want to delete all ToDoApp data in local storage?",
+						  onProceed: clearStorageFunc,
+						  modalOpts: { procButtonText: "Confirm", 
+									cancelButtonText: "Cancel", }, }
+
+		let confirmModal = new ModalConfirmationPresenter(modalArgs);
+		confirmModal.load();
+		confirmModal.view.render();
 	};
 
 	return appPresenter;

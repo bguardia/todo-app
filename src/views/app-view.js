@@ -16,7 +16,7 @@ export const ApplicationView = (function(){
 
         view.container = toHTML(
             `<div class="app-container">` +
-                `<div class="header d-flex align-items-center">` +
+                `<div class="header d-flex align-items-center justify-content-between p-4">` +
                     `<h1 class="header__logo">TodoApp</h1>` +
                 `</div>` +
                 `<div class="main-container row g-0">` +
@@ -35,6 +35,11 @@ export const ApplicationView = (function(){
                 `</div>` +
             `</div>`
         );
+
+        let header = this.container.querySelector(".header");
+        let settingsTxt = `<i class="fa-solid fa-gear"></i>`;
+        let settingsDropdown = components.dropdown(settingsTxt, [{ text: "Clear local storage", onClick: this.callbacks.clearLocalStorage }]);
+        header.appendChild(settingsDropdown);
 
         let todayBtn = this.container.querySelector("#nav__today-btn");
         todayBtn.addEventListener("click", this.callbacks.showTodayView);

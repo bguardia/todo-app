@@ -74,6 +74,10 @@ var toDoApp = {
 		if(storageAvailable('localStorage')){
 			localStorage.removeItem(this.config.storageLoc);
 		}
+
+		datasetModule.eachDataset(dataset => {
+			dataset.reset();
+		});
 	},
 };
 
@@ -104,9 +108,17 @@ var seedData = function() {
 
 var testAppView = function(){
 	toDoApp.load();
+
+	//set clearLocalStorage function for applicationPresenter
+	ApplicationPresenter._clearLocalStorage = function(){
+		console.log("ApplicationPresenter._clearLocalStorage");
+		toDoApp.clearData();
+	};
+
 	ApplicationPresenter.setView(ApplicationView);
 	ApplicationPresenter.load();
 	ApplicationView.render();
+
 };
 
 var saveDatasets = function(){
