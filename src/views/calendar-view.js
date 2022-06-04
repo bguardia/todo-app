@@ -115,6 +115,8 @@ const CalendarView = function(){
                     currentCol.setAttribute("dataset-calendar-date", currentDay);
                     currentCol.appendChild(toHTML(`<div class="calendar__item-container"></div>`));
                     currentDay++;
+                }else{
+                    currentCol.classList.add("calendar__col--empty");
                 }
                 currentRow.appendChild(currentCol);
             };
