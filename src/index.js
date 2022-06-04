@@ -10,6 +10,8 @@ import { ApplicationView } from './views/app-view.js';
 import './style.css';
 import './assets/font-awesome/js/all.js';
 
+import '../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js';
+
 //Check for localStorage
 //code from: https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API/Using_the_Web_Storage_API
 function storageAvailable(type) {

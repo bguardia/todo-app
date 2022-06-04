@@ -60,6 +60,31 @@ const components = {
 		return modal;
 	},
 
+	dropdown: function(btnText, dropdownItems = []){
+		/* dropdownItems contains an object for each link in the dropdown:
+	       { text: "Text to be placed in the dropdown menu", 
+	         onClick: functionToCallWhenClicked,  }
+		*/
+		let dropdown = toHTML(
+			`<div class="dropdown">` +
+				`<button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">` +
+		  			btnText +
+				`</button>` +
+				`<ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">` +
+		  		`</ul>` +
+	  		`</div>`);
+		let dropdownMenu = dropdown.querySelector(".dropdown-menu");
+
+		let dropdownItemHTML = `<li><a class="dropdown-item"">txt</a></li>`;
+		dropdownItems.forEach(item => {
+			let itemEl = toHTML(dropdownItemHTML.replace('txt', item.text));
+			itemEl.addEventListener("click", item.onClick);
+			dropdownMenu.appendChild(itemEl);
+		});
+		
+		return dropdown;
+	},
+
 	button: function(str, opts = { className: "btn-primary" }) {
 		let btn = document.createElement("button");
 		btn.className = "btn";
