@@ -37,6 +37,9 @@ const CalendarView = function(){
         let controlsContainer = toHTML(
             `<div>` +
                 `<div class="row mb-3">` +
+                    `<div class="col-auto d-flex align-items-end">` +
+                        `<button class="btn btn-primary prev-month-btn">&lt;</button>` +
+                    `</div>` +
                     `<div class="col-auto month-col">` +
                         `<label for="month-selector">Month</label>` +
                     `</div>` +
@@ -45,9 +48,15 @@ const CalendarView = function(){
                     `</div>` +
                     `<div class="col-auto submit-col d-flex align-items-end">` +
                     `</div>` +
+                    `<div class="col-auto d-flex align-items-end">` +
+                        `<button class="btn btn-primary next-month-btn">&gt;</button>` +
+                    `</div>` +
                 `</div>` +
             `</div>`
         );
+
+        
+
 
         let monthSelector = toHTML(
             `<select class="form-select" id="month-selector"></select>`);
@@ -82,6 +91,34 @@ const CalendarView = function(){
         });
         controlsContainer.querySelector(".submit-col").appendChild(submitButton);
 
+        let prevMonthBtn = controlsContainer.querySelector(".prev-month-btn");
+        prevMonthBtn.addEventListener("click", function(){
+            let calendar = document.querySelector(".calendar");
+            let month = parseInt(calendar.getAttribute("data-calendar-month"));
+            let year = parseInt(calendar.getAttribute("data-calendar-year"));
+            if(month - 1 < 0){
+                month = 11;
+                year = year - 1;
+            }else{
+                month = month - 1;
+            }
+            onSubmit(month, year);
+        });
+
+        let nextMonthBtn = controlsContainer.querySelector(".next-month-btn");
+        nextMonthBtn.addEventListener("click", function(){
+            let calendar = document.querySelector(".calendar");
+            let month = parseInt(calendar.getAttribute("data-calendar-month"));
+            let year = parseInt(calendar.getAttribute("data-calendar-year"));
+            if(month + 1 > 11){
+                month = 0;
+                year = year + 1;
+            }else{
+                month = month + 1;
+            }
+            onSubmit(month, year);
+        });
+
         return controlsContainer;
     }
 
@@ -92,7 +129,7 @@ const CalendarView = function(){
         let rows = Math.ceil(days / 7);
         let columns = 7;
 
-        let container = toHTML('<div class="container"></div>');
+        let container = toHTML(`<div class="container calendar" data-calendar-month="${month}" data-calendar-year="${year}"></div>`);
 
         //Create header row
         let headerRow = this.createRow("calendar__header-row gx-0");
