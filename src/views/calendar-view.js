@@ -151,6 +151,10 @@ const CalendarView = function(){
                     currentCol.appendChild(toHTML(`<div class="calendar__cell-header">${currentDay}</div>`));
                     currentCol.setAttribute("dataset-calendar-date", currentDay);
                     currentCol.appendChild(toHTML(`<div class="calendar__item-container"></div>`));
+
+                    if(j == 0 || j == (columns - 1)){//if currentCol is first or last of row
+                        currentCol.classList.add("calendar__col--weekend");
+                    }
                     currentDay++;
                 }else{
                     currentCol.classList.add("calendar__col--empty");
