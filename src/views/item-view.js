@@ -31,9 +31,10 @@ var ItemView = function(){
 				/*	`<button class="btn btn-outline-secondary btn-sm item-pill__edit">` +
 						`<i class="fa-solid fa-pen"></i>` +
 					`</button>` + */
+				/*
 					`<button class="btn btn-outline-danger btn-sm item-pill__delete">` +
 						`<i class="fa-solid fa-xmark"></i>` +
-					`</button>` +
+					`</button>` + */
 			`</div>`);
 
 		this.itemTitle = this.container.querySelector(".item-pill__title");
@@ -41,9 +42,18 @@ var ItemView = function(){
 
 		this.itemDate = this.container.querySelector(".item-pill__date");
 		this.itemPriority = this.container.querySelector(".item-pill__priority");
-
+			/*
 		this.itemDeleteBtn = this.container.querySelector(".item-pill__delete");
 		this.itemDeleteBtn.addEventListener("click", this.callbacks.deleteItem);
+			*/
+
+		let dropdownText = "";
+
+		let dropdown = components.dropdown(dropdownText, [{ text: "Edit", onClick: this.callbacks.editItem},
+														  { text: "Delete", onClick: this.callbacks.deleteItem}]);
+		let controlContainer = this.container.querySelector(".item-pill__controls");
+		controlContainer.appendChild(dropdown);
+
 
 	};
 

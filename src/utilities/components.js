@@ -29,6 +29,8 @@ const components = {
 	},
 
 	modal: function(title, modalContent, optArgs){
+		console.log("components.modal optArgs:");
+		console.log(optArgs);
 		let procButtonText = optArgs.procButtonText || "Create";
 		let cancelButtonText = optArgs.cancelButtonText || "Close";
 

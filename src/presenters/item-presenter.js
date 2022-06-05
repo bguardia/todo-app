@@ -2,6 +2,8 @@ import { format } from 'date-fns';
 import ApplicationPresenter from './application-presenter.js';
 import SynchronizingPresenter from './presenter.js';
 import ModalConfirmationPresenter from './modal-confirmation-presenter.js';
+import ModalFormPresenter from './modal-form-presenter.js';
+import ItemFormPresenter from './item-form-presenter.js';
 import ItemView from '../views/item-view.js';
 
 var ItemPresenter = function(item, opts = {}){
@@ -12,6 +14,18 @@ var ItemPresenter = function(item, opts = {}){
 	this.markComplete = function(){
 		this.itemModel.isComplete = true;
 		this.reload();
+	};
+
+	this.editItem = function(){
+		let itemOpts = Object.assign({ id: this.itemModel.id,
+			     		       projectId: this.itemModel.projectId, }, this.itemModel); //id and projectId currently aren't enumerable, plan to change in future
+		let opts = Object.assign({ modal: { title: "Edit Item", 
+				           					buttonText: "Update", },
+			   		 					  }, itemOpts);
+
+		let itemFormModal = new ModalFormPresenter(ItemFormPresenter, opts);
+		itemFormModal.load();
+		itemFormModal.view.render();
 	};
 
 	this.deleteItem = function(){
@@ -40,6 +54,7 @@ var ItemPresenter = function(item, opts = {}){
 	this.beforeInitialize = function(){
 		this.view.callbacks.showDetailedView = this.showDetailedView.bind(this);
 		this.view.callbacks.deleteItem = this.deleteItem.bind(this);
+		this.view.callbacks.editItem = this.editItem.bind(this);
 	};
 
 	this.viewProps = { title: this.itemModel.title, 
