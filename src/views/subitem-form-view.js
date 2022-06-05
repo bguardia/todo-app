@@ -1,6 +1,27 @@
 import { View, toHTML } from './view.js';
+import components from '../utilities/components.js';
 
 var SubItemFormView = function(){
+
+    this.updatePriorityColor = function(){
+		let priorityInput = this.container.querySelector("#priority-input");
+		let inputValue = priorityInput.value;
+		let priorityContainer = this.container.querySelector(".item-priority-container");
+		let currentPriorityIcon = this.container.querySelector(".item-priority-icon");
+
+		let iconValue = currentPriorityIcon.getAttribute("data-item-priority");
+		if(inputValue != iconValue){
+			priorityContainer.replaceChildren();
+			let newPriorityIcon = components.priorityIcon(inputValue, { includeText: true });
+			priorityContainer.appendChild(newPriorityIcon);
+		}
+
+		/*
+		let iconValue = priorityIcon.getAttribute("data-item-priority");
+		if(inputValue != iconValue){
+			priorityIcon.setAttribute("data-item-priority", inputValue);
+		} */
+	};
 
 	this._initialize = function(){
 
@@ -14,13 +35,25 @@ var SubItemFormView = function(){
 					`</div>` +
 				`</div>` +
 				`<div class="row">` +
-					`<div class="col">` +
-						`<label class="form-label" for="priority-input">Priority (0-4)</label>` +
-						`<input type="number" class="form-control" id="priority-input" name="title" min="0" max="4">` +
-					`</div>` +
+                `<div class="col">` +
+                `<label class="form-label" for="priority-input">Priority</label>` +
+                `<div class="row">` +
+                    `<div class="col flex-grow-1">` +
+                        `<input type="range" class="form-range" id="priority-input" name="title" min="0" max="4">` +
+                    `</div>` +
+                    `<div class="col flex-grow-1 item-priority-container">` +
+                        /* `<i class="fa-solid fa-flag item-priority-icon" data-item-priority="2"></i>` + */
+                    `</div>` +
+            `</div>` +
 				`</div>` +
 			`</div>`
 		);
+
+        let priorityContainer = this.container.querySelector(".item-priority-container");
+		priorityContainer.appendChild(components.priorityIcon(0, { includeText: true }));
+
+        let priorityInput = this.container.querySelector("#priority-input");
+		priorityInput.addEventListener("input", this.updatePriorityColor.bind(this));
 		
 	};
 
@@ -33,6 +66,8 @@ var SubItemFormView = function(){
 
 		let itemIdInput = this.container.querySelector("#project-id-input");
 		itemIdInput.value = viewProps.itemId;
+
+        this.updatePriorityColor();
 	};
 
 	this.getFormData = function(){
