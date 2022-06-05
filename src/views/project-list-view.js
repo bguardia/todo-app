@@ -26,7 +26,7 @@ var ProjectListView = function(){
 	this.createItemList = function(project){
 		let elId = this.getItemsListId(project.id);
 		let itemsListContainer = toHTML(
-			`<ul class="items-list d-flex flex-column align-items-center" id="${elId}"></ul>`
+			`<ul class="items-list" id="${elId}"></ul>`
 		);
 
         if(project.items.length > 0){
@@ -41,7 +41,10 @@ var ProjectListView = function(){
                 }
             });
         }else{
-            itemsListContainer.appendChild(toHTML(`<li class="items-list__item">No items added</li>`))
+            itemsListContainer.appendChild(toHTML(
+				`<li class="items-list__item">` +
+					`<button class="items-list__button items-list__button--disabled" disabled>No items added</button>` + `
+				</li>`));
         };
 
 		return itemsListContainer;
@@ -119,8 +122,8 @@ var ProjectListView = function(){
 		if(Object.keys(viewProps.projects).length <= 0){
 			let itsEmptyNotice = toHTML(
 				`<li class="projects-list__project">` + 
-					`<div class="d-flex justify-content-between">` +
-						`<p>No projects here!</p>` +
+					`<div class="projects-list__empty-project d-flex justify-content-center">` +
+						`<p class="empty-project__text">Click "New Project" above to create your first project!</p>` +
 					`</div>` +
 				`</li>`
 			);

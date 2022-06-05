@@ -29,6 +29,8 @@ export const ApplicationView = (function(){
                             `<button id="nav__new-item-btn" class="btn">New Item</button>` +
                         `</div>` +
                         `<div class="left-nav__projects-container flex-fill">` + //Projectlist Container
+                            `<p class="projects-container__header fs-3">My Projects</p>` + 
+                            `<div class="projects-list-container"></div>` +
                         `</div>` +
                     `</div>` +
                     `<div id="subview-container" class="container col-9 overflow-auto p-5"></div>` + //Subview Container
@@ -63,7 +65,7 @@ export const ApplicationView = (function(){
 	};
 
 	view.load = function(viewProps){
-        let projectList = this.container.querySelector(".left-nav__projects-container");
+        let projectList = this.container.querySelector(".projects-list-container");
 		projectList.replaceChildren();
 		projectList.appendChild(viewProps.projectListView.container);
 	};

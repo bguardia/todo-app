@@ -84,13 +84,22 @@ body,
 
 /* project list */
 
+.projects-container__header {
+    background: #444;
+    color: white;
+    margin: 0;
+    padding: 0.25em;
+    text-align: center;
+}
+
 .projects-list__project {
     /* padding: 0.5em; */
 }
 
 .projects-list__project-header {
-    background: grey;
-    border-bottom: solid 1px white;
+    background: red;
+    /* border-bottom: solid 1px white; */
+    box-shadow: 0 5px 10px 1px rgba(0,0,0,0.25);
 }
 
 .projects-list__project-title,
@@ -99,6 +108,11 @@ body,
     background: inherit;
     border: none;
     color: white;
+}
+
+.empty-project__text {
+    padding: 0.2em 10%;
+    font-size: 12px;
 }
 
 .items-list {
@@ -111,11 +125,31 @@ body,
 }*/
 
 .items-list__item {
-    background: #9d9d9d;
-    padding: 0.2em 10%;
+    /* background: #9d9d9d; */
+    padding: 0.2em 0;
     width: 100%;
-    border-bottom: solid 1px white;
+    border-bottom: solid 1px #888;
     position: relative;
+    height: 2em;
+}
+
+
+.items-list__button {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    text-align: left;
+    padding-left: 2em;
+}
+
+.items-list__button:hover {
+    background-color: #666;
+}
+
+.items-list__button--disabled:hover {
+    background-color: inherit; /* Prevent disabled items from changing color */
 }
 
 .items-list__item::before {
