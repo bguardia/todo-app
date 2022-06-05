@@ -99,7 +99,30 @@ const components = {
 		let icon = document.createElement("span");
 		icon.className = className;
 		return icon; 
-	}
+	},
+
+	priorityIcon: function(priorityLevel, opts = {}){
+		let defaultOpts = Object.assign({ optClasses: "", includeText: false}, opts);
+		let priorityTextArray = ["Low", "Medium Low", "Medium", "Medium High", "High"];
+
+		let txtEl = "";
+		if(defaultOpts.includeText){
+			let txt = "None";
+			if(priorityLevel > -1 && priorityLevel < priorityTextArray.length){
+				txt = priorityTextArray[(priorityLevel - 0)];
+			}
+			txtEl = `<span class="item-priority-text" data-item-priority="${priorityLevel}">${txt}</span>`;
+			console.log(txtEl);
+		}
+
+		let icon = toHTML(
+			`<span>` +
+				`<i class="fa-solid fa-flag item-priority-icon ${defaultOpts.optClasses}" data-item-priority="${priorityLevel}"></i>` + 
+				txtEl + 
+			`</span>`
+		);
+		return icon;
+	},
 };
 
 export default components;

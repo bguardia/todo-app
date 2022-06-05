@@ -1,4 +1,5 @@
 import { View, toHTML } from './view.js';
+import components from '../utilities/components.js';
 
 var ItemView = function(){
 	this.container = null;
@@ -21,7 +22,8 @@ var ItemView = function(){
 					`<div class="row">` +
 					`<div class="item-pill__details">` +
 						`<p><i class="fa-solid fa-clock"></i><span class="item-pill__date"></span></p>` +
-						`<p><i class="fa-solid fa-flag"></i><span class="item-pill__priority"></span></p>` +
+						/* `<p><i class="fa-solid fa-flag"></i><span class="item-pill__priority"></span></p>` + */
+						`<p class="item-pill__priority"></p>` +
 					`</div>` +
 					`</div>` +
 				`</div>` +
@@ -55,8 +57,11 @@ var ItemView = function(){
 	this.load = function(iObj){
 		this.itemTitle.innerHTML = iObj.title;
 		this.itemDate.innerHTML = iObj.date;
-		this.itemPriority.innerHTML = iObj.priority;
-
+		/* this.itemPriority.innerHTML = iObj.priority; */
+		let itemPriorityIcon = components.priorityIcon(iObj.priority, { includeText: true});
+		let itemPriorityContainer = this.container.querySelector(".item-pill__priority");
+		itemPriorityContainer.replaceChildren();
+		itemPriorityContainer.appendChild(itemPriorityIcon);
 		
 		if(!this.completeBtn){
 			this.completeBtn = this._markCompleteButton(iObj.markComplete);

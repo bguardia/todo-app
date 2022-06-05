@@ -1,4 +1,5 @@
 import { View, toHTML, nl2br } from './view.js';
+import components from '../utilities/components.js';
 
 var ItemDetailedView = function(){
 	this.callbacks = {};
@@ -18,7 +19,8 @@ var ItemDetailedView = function(){
 						`<h2 id="item-title" class="display-2 project__title"></h2>` + 
 						`<div id="item-details" class="item-pill__details">` +
 							`<p><i class="fa-solid fa-clock"></i><span id="item-details__date" class="item-pill__date"></span></p>` +
-							`<p><i class="fa-solid fa-flag"></i><span id="item-details__priority" class="item-pill__priority"></span></p>` +
+							/* `<p><i class="fa-solid fa-flag"></i><span id="item-details__priority" class="item-pill__priority"></span></p>` + */
+							`<p class="item-details__priority"><span class="item-details__priority-text"></span></p>` +
 						`</div>` +
 					`</div>` +
 					`<div class="description-container">` +
@@ -63,8 +65,10 @@ var ItemDetailedView = function(){
 		let dateEl = this.container.querySelector("#item-details__date");
 		dateEl.innerHTML = viewProps.date;
 
+		/*
 		let priorityEl = this.container.querySelector("#item-details__priority");
 		priorityEl.innerHTML = viewProps.priority;
+		*/
 
 		let descriptionEl = this.container.querySelector(".model-description");
 		if(viewProps.description != ""){
@@ -92,6 +96,11 @@ var ItemDetailedView = function(){
 		let breadcrumbContainer = this.container.querySelector(".breadcrumb-container");
 		breadcrumbContainer.replaceChildren();
 		breadcrumbContainer.append(viewProps.breadcrumbs);
+
+		let priorityIcon = components.priorityIcon(viewProps.priority, { includeText: true });
+		let priorityContainer = this.container.querySelector(".item-details__priority");
+		priorityContainer.replaceChildren();
+		priorityContainer.appendChild(priorityIcon);
 
 		/* NOTES CONTAINER
 		let notesContainer = this.container.querySelector(".item-notes-container");

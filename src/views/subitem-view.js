@@ -1,4 +1,5 @@
 import { View, toHTML } from './view.js';
+import components from '../utilities/components.js';
 
 var SubItemView = function(){
 	this.container = null;
@@ -19,7 +20,7 @@ var SubItemView = function(){
 					//`<div class="item-pill__details d-flex justify-content-evenly">` +
 					`<div class="row">` +
 					`<div class="item-pill__details">` +
-						`<p><i class="fa-solid fa-flag"></i><span class="item-pill__priority"></span></p>` +
+						`<p class="item-pill__priority"></p>` +
 					`</div>` +
 					`</div>` +
 				`</div>` +
@@ -50,7 +51,11 @@ var SubItemView = function(){
 
 	this.load = function(iObj){
 		this.itemTitle.innerHTML = iObj.title;
-		this.itemPriority.innerHTML = iObj.priority;
+
+        let itemPriorityIcon = components.priorityIcon(iObj.priority, { includeText: true});
+		let itemPriorityContainer = this.container.querySelector(".item-pill__priority");
+		itemPriorityContainer.replaceChildren();
+		itemPriorityContainer.appendChild(itemPriorityIcon);
 
 		if(!this.completeBtn){
 			this.completeBtn = this._markCompleteButton(iObj.markComplete);
