@@ -26,14 +26,16 @@ var ProjectListView = function(){
 	this.createItemList = function(project){
 		let elId = this.getItemsListId(project.id);
 		let itemsListContainer = toHTML(
-			`<ul class="items-list" id="${elId}"></ul>`
+			`<ul class="items-list d-flex flex-column align-items-center" id="${elId}"></ul>`
 		);
 
         if(project.items.length > 0){
             project.items.forEach(i => {
                 if(!i.isComplete){
                     let itemListItem = toHTML(
-                        `<li class="items-list__item">${i.title}</li>`
+                        `<li class="items-list__item">` +
+							`<button class="items-list__button" data-item-id="${i.id}">${i.title}</button>` +
+						`</li>`
                     );
                     itemsListContainer.appendChild(itemListItem);
                 }
@@ -43,6 +45,33 @@ var ProjectListView = function(){
         };
 
 		return itemsListContainer;
+	};
+
+	this.createProjectLinks = function(){
+		let showProjectView = this.callbacks.showProject;
+
+		let projectTitleEls = this.container.querySelectorAll(".projects-list__project-title");
+		projectTitleEls.forEach(el => {
+			el.addEventListener("click", function(){
+				let pId = this.getAttribute("data-project-id");
+				showProjectView(pId);
+			});
+		});
+
+	};
+
+	this.createItemLinks = function(){
+		let showItemView = this.callbacks.showItem;
+
+		let itemEls = this.container.querySelectorAll(".items-list__button");
+		itemEls.forEach(el => {
+			el.addEventListener("click", function(){
+				console.log("called project list item event listener");
+				let itemId = el.getAttribute("data-item-id");
+				showItemView(itemId);
+			});
+		});
+
 	};
 
 	this.load = function(viewProps){
@@ -56,20 +85,13 @@ var ProjectListView = function(){
 				let itemsListId = this.getItemsListId(p.id);
 				let projectListItem = toHTML(
 					`<li class="projects-list__project">` + 
-						`<div class="d-flex justify-content-between">` +
+						`<div class="d-flex justify-content-between p-1 projects-list__project-header">` +
 							`<button class="projects-list__project-title" data-project-id="${p.id}">${p.title}</button>` +
 							`<button class="projects-list__toggle-btn" data-target="${itemsListId}" data-project-id="${p.id}">` +
 							`</button>` +
 						`</div>` +
 					`</li>`
 				);
-				
-				let projectListTitle = projectListItem.querySelector(".projects-list__project-title");
-				let showProjectView = this.callbacks.showProject;
-				projectListTitle.addEventListener("click", function(){
-					let pId = this.getAttribute("data-project-id");
-					showProjectView(pId);
-				});
 
 				let toggleBtn = projectListItem.querySelector(".projects-list__toggle-btn");
 				let toggleHidden = this.callbacks.toggleHidden;
@@ -104,6 +126,9 @@ var ProjectListView = function(){
 			);
 			this.container.appendChild(itsEmptyNotice);
 		}
+
+		this.createProjectLinks();
+		this.createItemLinks();
 	}
 };
 ProjectListView.prototype = Object.create(View);

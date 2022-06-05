@@ -37,14 +37,6 @@ body,
     box-shadow: inset 2px 2px 5px rgba(0,0,0,0.25);
 }
 
-.items-list {
-    list-style-type: none;
-}
-
-.items-list li:before {
-    content: "\02EA";
-}
-
 /* item pills */
 
 .item-pills-group {
@@ -88,17 +80,50 @@ body,
     margin: 2em;
     color: grey;
 }
+
+
 /* project list */
 
 .projects-list__project {
-    padding: 0.5em;
+    /* padding: 0.5em; */
+}
+
+.projects-list__project-header {
+    background: grey;
+    border-bottom: solid 1px white;
 }
 
 .projects-list__project-title,
-.projects-list__toggle-btn {
+.projects-list__toggle-btn,
+.items-list__button {
     background: inherit;
     border: none;
     color: white;
+}
+
+.items-list {
+    list-style-type: none;
+    padding-inline-start: 0px;
+}
+/*
+.items-list li:before {
+    content: "\02EA";
+}*/
+
+.items-list__item {
+    background: #9d9d9d;
+    padding: 0.2em 10%;
+    width: 100%;
+    border-bottom: solid 1px white;
+    position: relative;
+}
+
+.items-list__item::before {
+    content: "";
+    border-left: solid 1px white;
+    border-bottom: solid 1px white;
+    position: absolute;
+    left: -100%;
 }
 
 /* ProjectView */
@@ -232,7 +257,7 @@ body,
     box-shadow: 0 0 5px 1px rgba(0,0,0,0.1);
     border-radius: 8px;
     padding: 0.5em;
-    
+
     max-height: 200px;
     white-space: nowrap;
     overflow-y: scroll;

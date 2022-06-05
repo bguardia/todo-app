@@ -46,6 +46,7 @@ var ProjectListPresenter = function(){
 	this.beforeInitialize = function(){
 		this.view.callbacks.toggleHidden = this.toggleHidden.bind(this);
 		this.view.callbacks.showProject = ApplicationPresenter.projectView;
+		this.view.callbacks.showItem = ApplicationPresenter.itemDetailedView;
 	}
 
 	this.setView(new ProjectListView());
